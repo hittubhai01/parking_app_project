@@ -160,8 +160,8 @@ If you are not a direct collaborator (i.e., you do not have push access), you wo
 
 1. **Clone the Repository**
    ```bash
-   git clone https://github.com/OWNER/REPO_NAME.git   # Download the repository to your local machine
-   cd REPO_NAME                                       # Move into the project directory
+   git clone https://github.com/neeraj975arora/parking_app_integration.git   # Download the repository to your local machine
+   cd parking_app_integration                                                # Move into the project directory
    ```
 
 2. **Ensure You Are on the Main Branch and Up to Date**
