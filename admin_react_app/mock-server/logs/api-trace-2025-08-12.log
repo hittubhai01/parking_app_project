@@ -1,0 +1,18 @@
+{"level":"info","message":"Mock server running on http://localhost:3001","service":"parking-mock-server","timestamp":"2025-08-12 19:17:38"}
+{"level":"info","message":"Environment: development","service":"parking-mock-server","timestamp":"2025-08-12 19:17:38"}
+{"level":"info","message":"CORS enabled for: http://localhost:5173","service":"parking-mock-server","timestamp":"2025-08-12 19:17:38"}
+{"level":"info","message":"SIGTERM received, shutting down gracefully","service":"parking-mock-server","timestamp":"2025-08-12 19:17:42"}
+{"level":"info","message":"Mock server running on http://localhost:3001","service":"parking-mock-server","timestamp":"2025-08-12 19:18:23"}
+{"level":"info","message":"Environment: development","service":"parking-mock-server","timestamp":"2025-08-12 19:18:23"}
+{"level":"info","message":"CORS enabled for: http://localhost:5173","service":"parking-mock-server","timestamp":"2025-08-12 19:18:23"}
+{"level":"info","message":"SIGTERM received, shutting down gracefully","service":"parking-mock-server","timestamp":"2025-08-12 19:18:26"}
+{"level":"info","message":"Mock server running on http://localhost:3001","service":"parking-mock-server","timestamp":"2025-08-12 19:19:02"}
+{"level":"info","message":"Environment: development","service":"parking-mock-server","timestamp":"2025-08-12 19:19:02"}
+{"level":"info","message":"CORS enabled for: http://localhost:5173","service":"parking-mock-server","timestamp":"2025-08-12 19:19:02"}
+{"level":"info","message":"127.0.0.1 - - [12/Aug/2025:13:49:03 +0000] \"GET /health HTTP/1.1\" 200 103 \"-\" \"curl/7.81.0\"","service":"parking-mock-server","timestamp":"2025-08-12 19:19:03"}
+{"category":"system","environment":"development","filters":["sensitive-data","pii-data"],"level":"info","logsDirectory":"/home/arashdeep.singh/admin_app_base_docs_new/mock-server/logs","message":"Log manager initialized","rotationPolicies":["application","error","api-trace","performance","security","business"],"service":"parking-mock-server","timestamp":"2025-08-12 19:29:17.686","version":"1.0.0"}
+{"level":"info","message":"127.0.0.1 - - [12/Aug/2025:13:59:20 +0000] \"GET /api/logs/stats HTTP/1.1\" 404 70 \"-\" \"curl/7.81.0\"","service":"parking-mock-server","timestamp":"2025-08-12 19:29:20"}
+{"level":"info","message":"127.0.0.1 - - [12/Aug/2025:13:59:20 +0000] \"GET /api/logs/levels HTTP/1.1\" 404 71 \"-\" \"curl/7.81.0\"","service":"parking-mock-server","timestamp":"2025-08-12 19:29:20"}
+{"level":"info","message":"127.0.0.1 - - [12/Aug/2025:13:59:20 +0000] \"GET /api/ HTTP/1.1\" 200 102 \"-\" \"curl/7.81.0\"","service":"parking-mock-server","timestamp":"2025-08-12 19:29:20"}
+{"category":"system","environment":"development","filters":["sensitive-data","pii-data"],"level":"info","logsDirectory":"/home/arashdeep.singh/admin_app_base_docs_new/mock-server/logs","message":"Log manager initialized","rotationPolicies":["application","error","api-trace","performance","security","business"],"service":"parking-mock-server","timestamp":"2025-08-12 19:30:10.953","version":"1.0.0"}
+{"environment":"development","level":"info","message":"SIGTERM received, shutting down gracefully","service":"parking-mock-server","timestamp":"2025-08-12 19:30:19.754","version":"1.0.0"}
