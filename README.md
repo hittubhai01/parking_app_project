@@ -224,10 +224,11 @@ git add react_admin_app/src/components/Login.js
 git commit -m "react_admin_app: fix login validation bug"
 
 git push origin react_admin_app/fix-login
+'''
 
 ### Example 2: Adding an API Endpoint in Backend
 
-bash
+'''bash
 
 Copy code
 
@@ -244,6 +245,7 @@ git add Backend/src/routes/parking.py Backend/tests/test_parking.py
 git commit -m "backend: add /parking/available endpoint"
 
 git push origin backend/add-parking-endpoint
+'''
 
 ### Example 3: Updating UI in Android User App
 
