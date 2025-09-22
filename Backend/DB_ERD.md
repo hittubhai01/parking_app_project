@@ -16,7 +16,6 @@ erDiagram
         string role
         timestamp created_on
     }
-    }
     ParkingLotDetails {
         int parkinglot_id PK
         text parking_name
