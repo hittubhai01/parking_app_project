@@ -14,6 +14,8 @@ erDiagram
         string user_phone_no
         text user_address
         string role
+        timestamp created_on
+    }
     }
     ParkingLotDetails {
         int parkinglot_id PK
@@ -83,6 +85,7 @@ erDiagram
         int id PK
         int admin_id FK
         int parking_lot_id FK
+         timestamp assigned_date
     }
     AdminPaymentLedger {
         int id PK
