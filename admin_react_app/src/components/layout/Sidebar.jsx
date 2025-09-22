@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { ConfirmationModal } from '../common/Modal';
@@ -48,21 +48,35 @@ const NavigationIcons = {
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
     </svg>
   ),
+  MenuIcon: ({ className }) => (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+    </svg>
+  ),
 };
 
-const Sidebar = ({ isOpen, onClose }) => {
+const Sidebar = ({ onCollapseChange }) => {
   const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   // Get visible navigation items based on user role
   const visibleNavSections = getVisibleNavItems(navigationSections, user?.role);
 
+  // Notify parent when collapsed state changes
+  useEffect(() => {
+    if (onCollapseChange) {
+      onCollapseChange(isCollapsed);
+    }
+  }, [isCollapsed, onCollapseChange]);
+
   const handleNavigation = (path) => {
     navigate(path);
     // Close mobile sidebar after navigation
-    if (onClose) onClose();
+    setIsMobileOpen(false);
   };
 
   const handleLogoutClick = () => {
@@ -84,147 +98,161 @@ const Sidebar = ({ isOpen, onClose }) => {
         key={item.id}
         onClick={() => handleNavigation(item.path)}
         className={`
-          group flex items-center w-full px-2 py-2 text-sm font-medium rounded-md transition-colors duration-200
+          group flex items-center w-full px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200
           ${isActive
-            ? 'bg-blue-100 text-blue-900 border-r-2 border-blue-600'
-            : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+            ? 'bg-blue-50 text-blue-700 border-l-3 border-blue-600'
+            : 'text-white hover:bg-gray-50 hover:text-blue-600'
           }
         `}
+        title={isCollapsed ? item.label : ''}
       >
         {IconComponent && (
           <IconComponent
             className={`
-              mr-3 flex-shrink-0 h-5 w-5 transition-colors duration-200
-              ${isActive ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'}
+              flex-shrink-0 h-5 w-5 transition-colors duration-200
+              ${isActive ? 'text-blue-600' : 'text-white group-hover:text-blue-500'}
+              ${isCollapsed ? 'mx-auto' : 'mr-3'}
             `}
           />
         )}
-        {item.label}
+        {!isCollapsed && (
+          <span className="transition-opacity duration-200">
+            {item.label}
+          </span>
+        )}
       </button>
     );
   };
 
   const sidebarContent = (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full mt-20">
       {/* Logo/Brand Area */}
-      <div className="flex items-center flex-shrink-0 px-4 py-4 border-b border-gray-200">
-        <div className="flex items-center">
-          <div className="h-8 w-8 bg-blue-600 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-sm">PA</span>
-          </div>
-          <span className="ml-2 text-lg font-semibold text-gray-900">
+       <div className={`flex items-center flex-shrink-0 px-4 py-1 border-b border-gray-100 ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
+      <button
+        onClick={() => setIsCollapsed(!isCollapsed)}
+        className={`
+          group flex items-center w-full px-1 py-1.5 text-sm font-medium rounded-lg transition-all duration-200
+          text-white hover:bg-gray-50 hover:text-blue-600
+          focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
+        `}
+        aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+        title={isCollapsed ? "Parking Admin" : ""}
+      >
+        <div className="h-7 w-7 rounded-md flex items-center justify-center group-hover:bg-blue-700 transition-colors duration-200">
+          <span className="text-white font-bold text-xs">PA</span>
+        </div>
+        
+        {/* Brand name - only visible when expanded */}
+        {!isCollapsed && (
+          <span className="ml-2 text-md font-semibold text-white group-hover:text-blue-800 transition-colors duration-200">
             Parking Admin
           </span>
-        </div>
-      </div>
+        )}
+      </button>
+    </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-2 py-4 space-y-6 overflow-y-auto" role="navigation" aria-label="Main navigation">
+      <nav className="flex-1 px-2 py-3 space-y-4 overflow-y-auto" role="navigation" aria-label="Main navigation">
         {visibleNavSections.map((section) => (
           <div key={section.section} role="group" aria-labelledby={`nav-section-${section.section}`}>
-            {/* Section Header */}
-            <h3 
-              id={`nav-section-${section.section}`}
-              className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2"
-            >
-              {section.section}
-            </h3>
+            {/* Section Header - only show when not collapsed */}
+            {!isCollapsed && (
+              <h3 
+                id={`nav-section-${section.section}`}
+                className="px-3 text-xs font-medium text-white uppercase tracking-wider mb-1"
+              >
+                {section.section}
+              </h3>
+            )}
             
             {/* Section Items */}
-            <div className="space-y-1" role="list">
+            <div className="space-y-0.5" role="list">
               {section.items.map(renderNavigationItem)}
             </div>
           </div>
         ))}
 
         {/* Logout Section */}
-        <div className="border-t border-gray-200 pt-4" role="group" aria-labelledby="nav-section-account">
-          <h3 
-            id="nav-section-account"
-            className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2"
-          >
-            ACCOUNT
-          </h3>
+        <div className="border-t border-gray-100 pt-3" role="group" aria-labelledby="nav-section-account">
+          {!isCollapsed && (
+            <h3 
+              id="nav-section-account"
+              className="px-3 text-xs font-medium text-white uppercase tracking-wider mb-1"
+            >
+              ACCOUNT
+            </h3>
+          )}
           <button
             onClick={handleLogoutClick}
-            className="group flex items-center w-full px-2 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors duration-200"
+            className={`group flex items-center w-full px-3 py-2.5 text-sm font-medium rounded-lg text-white hover:bg-gray-50 hover:text-red-600 transition-colors duration-200 ${isCollapsed ? 'justify-center' : ''}`}
             aria-label="Sign out of your account"
+            title={isCollapsed ? "Sign Out" : ""}
           >
-            <NavigationIcons.LogoutIcon className="mr-3 flex-shrink-0 h-5 w-5 text-gray-400 group-hover:text-gray-500 transition-colors duration-200" aria-hidden="true" />
-            Sign Out
+            <NavigationIcons.LogoutIcon className={`flex-shrink-0 h-5 w-5 text-white group-hover:text-red-500 transition-colors duration-200 ${isCollapsed ? '' : 'mr-3'}`} aria-hidden="true" />
+            {!isCollapsed && "Sign Out"}
           </button>
         </div>
       </nav>
 
-      {/* User Info */}
-      <div className="flex-shrink-0 border-t border-gray-200 p-4">
-        <div className="flex items-center">
-          <div className="h-10 w-10 rounded-full bg-blue-600 flex items-center justify-center">
-            <span className="text-sm font-medium text-white">
-              {getUserInitials(user?.username)}
-            </span>
-          </div>
-          <div className="ml-3 flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-900 truncate">
-              {user?.username}
-            </p>
-            <p className="text-xs text-gray-500 truncate">
-              {formatUserRole(user?.role)}
-            </p>
+      {/* User Info - only show when not collapsed */}
+      {!isCollapsed && (
+        <div className="flex-shrink-0 border-t border-gray-950 p-3">
+          <div className="flex items-center">
+            <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center">
+              <span className="text-xs font-medium text-white">
+                {getUserInitials(user?.username)}
+              </span>
+            </div>
+            <div className="ml-2 flex-1 min-w-0">
+              <p className="text-sm font-medium text-white truncate">
+                {user?.username}
+              </p>
+              <p className="text-xs text-white truncate">
+                {formatUserRole(user?.role)}
+              </p>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 
   return (
     <>
+      {/* Mobile menu button */}
+      <div className="md:hidden fixed top-3 left-3 z-50">
+        <button
+          onClick={() => setIsMobileOpen(!isMobileOpen)}
+          className="inline-flex items-center justify-center p-2 rounded-md text-white hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 transition-colors duration-200"
+          aria-expanded="false"
+        >
+          <span className="sr-only">Open main menu</span>
+          <NavigationIcons.MenuIcon className="block h-5 w-5" aria-hidden="true" />
+        </button>
+      </div>
+
       {/* Desktop Sidebar */}
-      <div className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 md:pt-16">
-        <div className="flex flex-col flex-grow bg-white border-r border-gray-200 overflow-hidden">
+      <div className={`hidden md:flex md:flex-col md:fixed md:inset-y-0 transition-all duration-300 ease-in-out ${isCollapsed ? 'md:w-16' : 'md:w-60'}`}>
+        <div className="flex flex-col flex-grow  border-r border-gray-950 overflow-hidden shadow-sm">
           {sidebarContent}
         </div>
       </div>
 
       {/* Mobile Sidebar */}
-      <div className={`fixed inset-0 z-40 md:hidden transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+      <div className={`fixed inset-0 z-40 md:hidden transition-opacity duration-300 ${isMobileOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
         {/* Overlay */}
         <div
-          className={`fixed inset-0 bg-gray-600 transition-opacity duration-300 ${isOpen ? 'bg-opacity-75' : 'bg-opacity-0'}`}
-          onClick={onClose}
+          className={`fixed inset-0 bg-gray-600 transition-opacity duration-300 ${isMobileOpen ? 'bg-opacity-75' : 'bg-opacity-0'}`}
+          onClick={() => setIsMobileOpen(false)}
           aria-hidden="true"
         />
         
         {/* Sidebar Panel */}
-        <div className={`relative flex-1 flex flex-col max-w-xs w-full bg-white transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-          {/* Close Button */}
-          <div className="absolute top-0 right-0 -mr-12 pt-2">
-            <button
-              type="button"
-              className="ml-1 flex items-center justify-center h-10 w-10 rounded-full focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white hover:bg-gray-600 hover:bg-opacity-25 transition-colors duration-200"
-              onClick={onClose}
-              aria-label="Close sidebar"
-            >
-              <span className="sr-only">Close sidebar</span>
-              <svg
-                className="h-6 w-6 text-white"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </button>
-          </div>
+        <div className={`relative flex-1 flex flex-col max-w-xs w-full transform transition-transform duration-300 ease-in-out ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+          
           
           {/* Sidebar Content */}
-          <div className="h-full pt-5 pb-4">
+          <div className="h-full pt-4 pb-3">
             {sidebarContent}
           </div>
         </div>

@@ -356,6 +356,13 @@ class DataOrchestrator {
     for (let i = 0; i < 15; i++) {
       const admin = await this.userGenerator.generateAdmin();
       
+      // Ensure the first admin has deterministic credentials for easy login
+      if (i === 0) {
+        admin.user_email = 'admin@parking.com';
+        admin.user_name = 'Admin User';
+        // Password for all generated admins is 'admin123' (set in userGenerator)
+      }
+      
       // Customize admin details
       admin.profile.employee_id = `ADM${String(i + 1).padStart(3, '0')}`;
       admin.admin_details.shift_timings = this.generateShiftTimings(i);

@@ -3,13 +3,14 @@ import { API_ENDPOINTS } from '../utils/constants';
 
 class AdminService {
   // Create new admin with lot assignments
+  // adminService.js - Fix createAdmin method
   async createAdmin(adminData) {
     try {
-      const response = await api.post(API_ENDPOINTS.ADMIN.ASSIGN_LOT, {
+      const response = await api.post(API_ENDPOINTS.ADMIN.CREATE, { // Changed endpoint
         name: adminData.name,
         email: adminData.email,
         password: adminData.password,
-        role: 'admin', // Hardcoded as 'admin' - not user selectable
+        role: 'admin',
         assigned_lots: adminData.assigned_lots,
       });
 
@@ -41,7 +42,24 @@ class AdminService {
   async getAllAdmins() {
     try {
       const response = await api.get(API_ENDPOINTS.ADMIN.ALL_ADMIN_LOTS);
-      return response.data;
+      const payload = response?.data;
+      const assignments = Array.isArray(payload?.data) ? payload.data : [];
+      // Normalize to the shape expected by UI (array of admins)
+      const admins = assignments.map((a) => ({
+        admin_id: a.admin_id,
+        name: a.admin_name, // Updated to match new API structure
+        email: a.admin_email || undefined,
+        role: 'admin',
+        assigned_lots: Array.isArray(a.assigned_lots) ? a.assigned_lots : [],
+        // Include additional fields for future use
+        admin_phone_no: a.admin_phone_no,
+        admin_address: a.admin_address,
+        joining_date: a.joining_date,
+        status: a.status,
+        permissions: a.permissions,
+        shift_timings: a.shift_timings
+      }));
+      return admins;
     } catch (error) {
       if (error.response) {
         const { status, data } = error.response;
@@ -51,6 +69,46 @@ class AdminService {
             throw new Error('You are not authorized to view admin data');
           case 404:
             throw new Error('Admin data not found');
+          default:
+            throw new Error(data?.message || 'Failed to fetch admin data');
+        }
+      } else if (error.request) {
+        throw new Error('Network error. Please check your connection');
+      } else {
+        throw new Error(error.message || 'An unexpected error occurred');
+      }
+    }
+  }
+
+  // Get single admin data with assigned lots
+  async getAdminById(adminId) {
+    try {
+      const response = await api.get(`/admin/admin_lots/${adminId}`);
+      const adminData = response?.data;
+      
+      // Return the admin data with the new structure
+      return {
+        admin_id: adminData.admin_id,
+        admin_name: adminData.admin_name,
+        admin_email: adminData.admin_email,
+        admin_phone_no: adminData.admin_phone_no,
+        admin_address: adminData.admin_address,
+        joining_date: adminData.joining_date,
+        status: adminData.status,
+        assigned_lots: Array.isArray(adminData.assigned_lots) ? adminData.assigned_lots : [],
+        // Future fields
+        permissions: adminData.permissions,
+        shift_timings: adminData.shift_timings
+      };
+    } catch (error) {
+      if (error.response) {
+        const { status, data } = error.response;
+        
+        switch (status) {
+          case 403:
+            throw new Error('You are not authorized to view admin data');
+          case 404:
+            throw new Error('Admin not found');
           default:
             throw new Error(data?.message || 'Failed to fetch admin data');
         }

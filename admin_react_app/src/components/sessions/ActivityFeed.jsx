@@ -148,7 +148,7 @@ const ActivityFeed = ({ user, activities = [], onActivityUpdate }) => {
         {realtimeActivities.length > 0 ? (
           <div className="space-y-4 max-h-96 overflow-y-auto">
             {realtimeActivities.map((activity, index) => (
-              <div key={`${activity.timestamp || index}`} className="flex items-start space-x-3">
+              <div key={`${activity.timestamp || 'no-timestamp'}-${index}`} className="flex items-start space-x-3">
                 {getActivityIcon(activity.type)}
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-gray-900 break-words">{activity.message}</p>

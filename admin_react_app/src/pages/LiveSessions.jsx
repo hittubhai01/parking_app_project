@@ -54,9 +54,9 @@ const LiveSessions = () => {
   }, 300);
 
   // Handle vehicle check out
-  const handleCheckOut = async (ticketId) => {
+  const handleCheckOut = async (ticketId, paymentMethod = 'digital') => {
     try {
-      await checkOutVehicle(ticketId);
+      await checkOutVehicle(ticketId, paymentMethod);
       
       // Find the participant being checked out
       const participant = sessionData.activeSessions.find(p => p.ticket_id === ticketId);
@@ -85,6 +85,7 @@ const LiveSessions = () => {
       console.log('Vehicle checked out successfully');
     } catch (error) {
       console.error('Failed to check out vehicle:', error);
+      alert(error.message || 'Failed to check out vehicle');
       throw error;
     }
   };
@@ -154,7 +155,7 @@ const LiveSessions = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" data-testid="live-sessions-kpi-cards">
         <KPICard
           title="Active Participants"
           value={sessionData?.stats.activeParticipants}
@@ -195,14 +196,14 @@ const LiveSessions = () => {
               {/* Search Bar */}
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="h-5 w-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                 </div>
                 <input
                   type="text"
                   placeholder="Search by vehicle ID or name..."
-                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                  className="block text-gray-900 w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                   onChange={(e) => debouncedSearch(e.target.value)}
                 />
               </div>

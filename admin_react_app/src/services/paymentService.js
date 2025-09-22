@@ -14,8 +14,8 @@ class PaymentService {
         // Regular Admin: Get session details for specific user
         response = await api.get(`${API_ENDPOINTS.ADMIN.SESSION_DETAILS}/${user.user_id}`);
       }
-
-      return response.data;
+      const data = Array.isArray(response?.data) ? response.data : [];
+      return data;
     } catch (error) {
       this.handlePaymentError(error);
     }
@@ -30,10 +30,13 @@ class PaymentService {
 
   // Transform individual session to payment record
   transformSessionToPayment(session) {
-    // Calculate payment amount based on duration and vehicle type
+    // Calculate payment amount based on duration and vehicle type (or use total_amount if provided)
     const baseRate = this.getVehicleRate(session.vehicle_type);
     const duration = session.duration_hrs || 0;
-    const amount = duration * baseRate;
+    const estimated = duration * baseRate;
+    const amount = typeof session.total_amount === 'number' && session.total_amount > 0
+      ? session.total_amount
+      : Math.round(estimated * 100) / 100;
 
     // Determine payment status
     const status = this.determinePaymentStatus(session);
@@ -42,7 +45,7 @@ class PaymentService {
       payment_id: `P${session.ticket_id || Math.random().toString(36).substr(2, 9)}`,
       vehicle_reg_no: session.vehicle_reg_no,
       amount: amount,
-      date: session.start_time,
+      date: session.payment_timestamp || session.end_time || session.start_time,
       duration: this.formatDuration(session.duration_hrs),
       status: status,
       session_id: session.ticket_id,

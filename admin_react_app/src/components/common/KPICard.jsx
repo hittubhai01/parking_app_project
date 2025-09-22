@@ -109,7 +109,7 @@ const KPICard = React.memo(({
   }
 
   return (
-    <div className={`bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow duration-200 ${className}`}>
+    <div className={`bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow duration-200 ${className}`} data-testid="kpi-card">
       {/* Title */}
       <h3 className="text-sm font-medium text-gray-500 mb-2">
         {title}
@@ -117,13 +117,13 @@ const KPICard = React.memo(({
 
       {/* Value */}
       <div className="flex items-baseline justify-between">
-        <p className="text-2xl font-bold text-gray-900">
+        <p className="text-2xl font-bold text-gray-900" data-testid="kpi-value">
           {formattedValue}
         </p>
         
         {/* Trend Indicator */}
         {trend && (
-          <div className={`flex items-center space-x-1 ${trendColor}`}>
+          <div className={`flex items-center space-x-1 ${trendColor}`} data-testid="kpi-trend">
             {trendIcon}
             <span className="text-sm font-medium">
               {typeof trend === 'object' ? trend.value : trend}
@@ -134,7 +134,7 @@ const KPICard = React.memo(({
 
       {/* Subtitle */}
       {subtitle && (
-        <p className="text-sm text-gray-600 mt-1">
+        <p className="text-sm text-gray-600 mt-1" data-testid="kpi-subtitle">
           {subtitle}
         </p>
       )}

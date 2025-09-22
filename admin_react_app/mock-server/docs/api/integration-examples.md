@@ -109,7 +109,7 @@ class ApiService {
   
   // Admin Management
   static async getAllAdmins(page = 1, limit = 20) {
-    return this.request(`/all_admin/admin_lots/?page=${page}&limit=${limit}`);
+    return this.request(`/admins/admin_lots/all?page=${page}&limit=${limit}`);
   }
   
   static async createAdmin(adminData) {
@@ -122,7 +122,7 @@ class ApiService {
   // Session Management
   static async getAllSessions(filters = {}) {
     const params = new URLSearchParams(filters);
-    return this.request(`/admin/all_session/details/?${params}`);
+    return this.request(`/admin/sessions/details/all?${params}`);
   }
   
   static async checkinVehicle(checkinData) {

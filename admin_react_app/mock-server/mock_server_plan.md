@@ -118,11 +118,11 @@ POST /auth/refresh
 GET  /auth/me
 Step 3.2: Admin Management Endpoints
 // Admin Management API Endpoints
-GET    /admin/all_session/details/
+GET    /admin/sessions/details/all
 GET    /admin/session/details/:user_id
 POST   /admin/assign_lot
 DELETE /admin/remove_assignment
-GET    /all_admin/admin_lots/
+GET    /admins/admin_lots/all
 GET    /admin_lots/:user_id
 Step 3.3: Session Management Endpoints
 // Session Management API Endpoints

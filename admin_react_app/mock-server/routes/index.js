@@ -13,11 +13,10 @@ const debugRoutes = require('./debug');
 
 // Mount routes according to API specifications (no /api prefix)
 router.use('/auth', authRoutes);                    // /auth/*
-router.use('/admin', adminRoutes);                  // /admin/assign_lot, /admin/remove_assignment, /admin/all_session/details/, /admin/session/details/:user_id
+router.use('/admin', adminRoutes);                  // /admin/assign_lot, /admin/remove_assignment, /admin/sessions/details/all, /admin/session/details/:user_id
 router.use('/admin', sessionRoutes);                // /admin/session/checkin, /admin/session/checkout
 router.use('/admin', closureRoutes);                // /admin/total_due, /admin/finalize_closure, /admin/closure
-router.use('/all_admin', adminRoutes);              // /all_admin/admin_lots/
-router.use('/', adminRoutes);                       // /admin_lots/:user_id (root level)
+router.use('/admins', adminRoutes);                 // /admins/admin_lots/all
 
 // Health and monitoring routes
 router.use('/health', healthRoutes);                // /health/* - Health check endpoints
@@ -43,12 +42,12 @@ router.get('/', (req, res) => {
       ],
       adminManagement: [
         'POST /admin/assign_lot - Create admin with lot assignments (super_admin only)',
-        'GET /all_admin/admin_lots/ - Get all admin lot assignments (super_admin only)',
+        'GET /admins/admin_lots/all - Get all admin lot assignments (super_admin only)',
         'DELETE /admin/remove_assignment - Remove admin assignment (super_admin only)',
-        'GET /admin_lots/:user_id - Get admin lot assignments (admin access)'
+        'GET /admin/admin_lots/:user_id - Get admin lot assignments (admin access)'
       ],
       sessionManagement: [
-        'GET /admin/all_session/details/ - Get all session details (super_admin only)',
+        'GET /admin/sessions/details/all - Get all session details (super_admin only)',
         'GET /admin/session/details/:user_id - Get admin session details (admin access)',
         'POST /admin/session/checkin - Check in a vehicle (admin only)',
         'POST /admin/session/checkout - Check out a vehicle (admin only)'

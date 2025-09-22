@@ -173,7 +173,7 @@ paths:
         '409':
           $ref: '#/components/responses/ConflictError'
 
-  /all_admin/admin_lots/:
+  /admins/admin_lots/all:
     get:
       tags:
         - Admin Management
@@ -207,7 +207,7 @@ paths:
         '403':
           $ref: '#/components/responses/AuthorizationError'
 
-  /admin_lots/{user_id}:
+  /admin/admin_lots/{user_id}:
     get:
       tags:
         - Admin Management
@@ -238,7 +238,7 @@ paths:
           $ref: '#/components/responses/NotFoundError'
 
   # Session Management endpoints
-  /admin/all_session/details/:
+  /admin/sessions/details/all:
     get:
       tags:
         - Session Management

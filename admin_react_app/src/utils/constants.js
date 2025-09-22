@@ -28,12 +28,14 @@ export const API_ENDPOINTS = {
     LOGIN: "/auth/login",
   },
   ADMIN: {
-    ALL_SESSION_DETAILS: "/admin/all_session/details/", // super_admin -> GET
+    ALL_SESSION_DETAILS: "/admin/sessions/details/all", // super_admin -> GET
     SESSION_DETAILS: "/admin/session/details",        // admin -> GET /admin/session/details/:user_id
+    CREATE: "/admin/assign_lot",                       // super_admin -> POST (create admin)
     ASSIGN_LOT: "/admin/assign_lot",
     REMOVE_ASSIGNMENT: "/admin/remove_assignment",
-    ALL_ADMIN_LOTS: "/all_admin/admin_lots/",
-    CLOSURE: "/admin/closure",
+    ALL_ADMIN_LOTS: "/admins/admin_lots/all",
+    CLOSURE: "/admin/closure",                         // GET for data, POST for create/update/finalize
+    TOTAL_DUE: "/admin/total_due",
     SESSION_CHECKIN: "/admin/session/checkin",
     SESSION_CHECKOUT: "/admin/session/checkout",
   },
@@ -48,8 +50,8 @@ export const DEMO_CREDENTIALS = {
     label: "Super Admin",
   },
   ADMIN: {
-    user_email: "john@example.com",
-    user_password: "password123",
+    user_email: "admin@parking.com",
+    user_password: "admin123",
     role: USER_ROLES.ADMIN,
     label: "Admin",
   },

@@ -24,7 +24,7 @@ const LoadingSpinner = ({
     : 'flex items-center justify-center p-4';
 
   return (
-    <div className={containerClasses}>
+    <div className={containerClasses} data-testid="loading-spinner">
       <div className="text-center">
         <div
           className={`

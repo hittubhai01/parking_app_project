@@ -34,7 +34,7 @@ const Button = ({
       disabled:bg-gray-300
     `,
     outline: `
-      border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 
+      border border-gray-300 bg-white text-white hover:bg-gray-50 
       focus:ring-blue-500 disabled:bg-gray-50
     `,
     ghost: `

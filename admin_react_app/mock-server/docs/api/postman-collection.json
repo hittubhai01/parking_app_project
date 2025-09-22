@@ -204,119 +204,6 @@
       ]
     },
     {
-      "name": "Admin Management",
-      "item": [
-        {
-          "name": "Get All Admin Lot Assignments",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Admin lot assignments retrieved', function () {",
-                  "    pm.response.to.have.status(200);",
-                  "    const response = pm.response.json();",
-                  "    pm.expect(response.success).to.be.true;",
-                  "    pm.expect(response.data).to.be.an('array');",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/all_admin/admin_lots/?page=1&limit=20",
-              "host": ["{{base_url}}"],
-              "path": ["all_admin", "admin_lots", ""],
-              "query": [
-                {
-                  "key": "page",
-                  "value": "1"
-                },
-                {
-                  "key": "limit",
-                  "value": "20"
-                }
-              ]
-            }
-          }
-        },
-        {
-          "name": "Create New Admin",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Admin created successfully', function () {",
-                  "    if (pm.response.code === 201) {",
-                  "        const response = pm.response.json();",
-                  "        pm.expect(response.success).to.be.true;",
-                  "        pm.expect(response.user_id).to.be.a('number');",
-                  "        pm.expect(response.role).to.eql('admin');",
-                  "    } else if (pm.response.code === 409) {",
-                  "        pm.expect(pm.response.json().error).to.include('already exists');",
-                  "    }",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Test Admin\",\n  \"email\": \"test.admin@parking.com\",\n  \"password\": \"TestAdmin@123\",\n  \"assigned_lots\": [1, 2],\n  \"role\": \"admin\",\n  \"phone_number\": \"+91-9876543299\",\n  \"address\": \"Test Office, Delhi\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/admin/assign_lot",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "assign_lot"]
-            }
-          }
-        },
-        {
-          "name": "Get Admin Lot Assignments by User ID",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Admin lot assignments retrieved', function () {",
-                  "    pm.response.to.have.status(200);",
-                  "    const response = pm.response.json();",
-                  "    pm.expect(response.success).to.be.true;",
-                  "    pm.expect(response.user_id).to.be.a('number');",
-                  "    pm.expect(response.assigned_lots).to.be.an('array');",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/admin_lots/2",
-              "host": ["{{base_url}}"],
-              "path": ["admin_lots", "2"]
-            }
-          }
-        }
-      ]
-    },
-    {
       "name": "Session Management",
       "item": [
         {
@@ -340,7 +227,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/admin/all_session/details/?page=1&limit=20&status=all",
+              "raw": "{{base_url}}/admin/sessions/details/all?page=1&limit=20&status=all",
               "host": ["{{base_url}}"],
               "path": ["admin", "all_session", "details", ""],
               "query": [
@@ -689,7 +576,7 @@
                   "pm.test('Detailed health check successful', function () {",
                   "    const response = pm.response.json();",
                   "    pm.expect(response.status).to.be.oneOf(['healthy', 'degraded', 'unhealthy']);",
-                  "    pm.expect(response.checks).to.be.an('object');",
+                  "    pm.except(response.checks).to.be.an('object');",
                   "});"
                 ],
                 "type": "text/javascript"

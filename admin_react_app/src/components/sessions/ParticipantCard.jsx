@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Button, ConfirmationModal } from '../common';
+import { Button, Modal } from '../common';
 
 const ParticipantCard = ({ participant, onCheckOut }) => {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState('digital');
 
   // Get initials for avatar
   const getInitials = (name) => {
@@ -19,7 +20,7 @@ const ParticipantCard = ({ participant, onCheckOut }) => {
   const handleCheckOut = async () => {
     try {
       setIsCheckingOut(true);
-      await onCheckOut(participant.ticket_id);
+      await onCheckOut(participant.ticket_id, paymentMethod);
       setShowConfirmModal(false);
     } catch (error) {
       console.error('Check out failed:', error);
@@ -76,18 +77,74 @@ const ParticipantCard = ({ participant, onCheckOut }) => {
         </div>
       </div>
 
-      {/* Confirmation Modal */}
-      <ConfirmationModal
+      {/* Custom Checkout Modal */}
+      <Modal
         isOpen={showConfirmModal}
         onClose={() => setShowConfirmModal(false)}
-        onConfirm={handleCheckOut}
         title="Check Out Vehicle"
-        message={`Are you sure you want to check out ${participant.participant_name}'s vehicle (${participant.vehicle_reg_no})?`}
-        confirmText="Check Out"
-        cancelText="Cancel"
-        isLoading={isCheckingOut}
-        variant="danger"
-      />
+        size="sm"
+      >
+        <div className="text-center">
+          {/* Warning Icon */}
+          <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100 mb-4">
+            <svg
+              className="h-6 w-6 text-yellow-600"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+              />
+            </svg>
+          </div>
+
+          {/* Message */}
+          <p className="text-sm text-gray-600 mb-4">
+            Are you sure you want to check out <strong>{participant.participant_name}</strong>'s vehicle ({participant.vehicle_reg_no})?
+          </p>
+
+          {/* Payment Method Selection */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Payment Method
+            </label>
+            <select
+              value={paymentMethod}
+              onChange={(e) => setPaymentMethod(e.target.value)}
+              className="block text-gray-950 w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              disabled={isCheckingOut}
+            >
+              <option value="digital">Digital Payment</option>
+              <option value="cash">Cash</option>
+              <option value="card">Card</option>
+            </select>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex space-x-3 justify-center">
+            <Button
+              variant="outline"
+              onClick={() => setShowConfirmModal(false)}
+              disabled={isCheckingOut}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              onClick={handleCheckOut}
+              loading={isCheckingOut}
+              disabled={isCheckingOut}
+            >
+              Check Out
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </>
   );
 };

@@ -36,23 +36,60 @@ const AdminManagement = () => {
   const [submitError, setSubmitError] = useState('');
   const [submitSuccess, setSubmitSuccess] = useState('');
 
+  // State for edit admin
+  const [editModal, setEditModal] = useState({ isOpen: false, admin: null, editedLots: [] });
+
   // State for admin table
   const [searchTerm, setSearchTerm] = useState('');
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, admin: null });
 
-  // Mock parking lots data (replace with API call later)
-  const parkingLots = [
-    { value: 1, label: 'Parking Lot P1' },
-    { value: 2, label: 'Parking Lot P2' },
-    { value: 3, label: 'Parking Lot P3' },
-    { value: 4, label: 'Parking Lot P4' },
-    { value: 5, label: 'Parking Lot P5' },
-  ];
+  // Generate parking lots data (1-25 as per mock server)
+  const parkingLots = Array.from({ length: 25 }, (_, index) => ({
+    value: index + 1,
+    label: `Parking Lot P${index + 1}`
+  }));
+
+  // State for available lots
+  const [availableLots, setAvailableLots] = useState(parkingLots);
+  const [assignedLotsInfo, setAssignedLotsInfo] = useState({});
 
   // Fetch admin data on component mount
   useEffect(() => {
     fetchAdminData();
   }, []);
+
+  // Update available lots when admin data changes
+  useEffect(() => {
+    if (adminData.length > 0) {
+      const assignedInfo = {};
+      const assignedLotIds = new Set();
+      
+      // Collect all assigned lots and their assignees
+      adminData.forEach(admin => {
+        if (admin.assigned_lots && Array.isArray(admin.assigned_lots)) {
+          admin.assigned_lots.forEach(lot => {
+            // Handle both old format (lotId) and new format (lot object with parkinglot_id)
+            const lotId = typeof lot === 'object' ? lot.parkinglot_id : lot;
+            assignedLotIds.add(lotId);
+            if (!assignedInfo[lotId]) {
+              assignedInfo[lotId] = [];
+            }
+            assignedInfo[lotId].push(admin.name || admin.username);
+          });
+        }
+      });
+      
+      setAssignedLotsInfo(assignedInfo);
+      
+      // Filter available lots (only show unassigned lots)
+      const available = parkingLots.filter(lot => !assignedLotIds.has(lot.value));
+      setAvailableLots(available);
+    } else {
+      // If no admin data, all lots are available
+      setAvailableLots(parkingLots);
+      setAssignedLotsInfo({});
+    }
+  }, [adminData]);
 
   const fetchAdminData = async () => {
     try {
@@ -103,6 +140,19 @@ const AdminManagement = () => {
       assigned_lots: prev.assigned_lots.includes(lotId)
         ? prev.assigned_lots.filter(id => id !== lotId)
         : [...prev.assigned_lots, lotId],
+    }));
+  };
+
+  // Handle edit lots selection
+  const handleEditLotsChange = (e) => {
+    const { value } = e.target;
+    const lotId = parseInt(value);
+    
+    setEditModal(prev => ({
+      ...prev,
+      editedLots: prev.editedLots.includes(lotId)
+        ? prev.editedLots.filter(id => id !== lotId)
+        : [...prev.editedLots, lotId],
     }));
   };
 
@@ -173,20 +223,52 @@ const AdminManagement = () => {
     }
   };
 
+  // Handle admin edit
+  const handleEditAdmin = async () => {
+    if (!editModal.admin) return;
+    
+    try {
+      // Implement your edit API call here
+      // await adminService.updateAdmin(editModal.admin.admin_id, {
+      //   assigned_lots: editModal.editedLots
+      // });
+      
+      setEditModal({ isOpen: false, admin: null, editedLots: [] });
+      
+      // Refresh admin data
+      await fetchAdminData();
+    } catch (error) {
+      console.error('Failed to update admin:', error);
+    }
+  };
+
   // Handle admin deletion
   const handleDeleteAdmin = async () => {
     if (!deleteModal.admin) return;
     
     try {
-      await adminService.deleteAdmin(deleteModal.admin.user_id);
+      await adminService.deleteAdmin(deleteModal.admin.admin_id);
       setDeleteModal({ isOpen: false, admin: null });
       
       // Refresh admin data
       await fetchAdminData();
     } catch (error) {
       console.error('Failed to delete admin:', error);
-      // You could show an error message here
     }
+  };
+
+  // Open edit modal
+  const openEditModal = (admin) => {
+    // Extract lot IDs from assigned_lots (handle both old and new format)
+    const lotIds = admin.assigned_lots ? admin.assigned_lots.map(lot => 
+      typeof lot === 'object' ? lot.parkinglot_id : lot
+    ) : [];
+    
+    setEditModal({
+      isOpen: true,
+      admin,
+      editedLots: lotIds
+    });
   };
 
   // Filter admins based on search term
@@ -207,7 +289,7 @@ const AdminManagement = () => {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" data-testid="admin-kpi-cards">
         <KPICard
           title="Total Admins"
           value={kpis.totalAdmins}
@@ -235,7 +317,7 @@ const AdminManagement = () => {
       </div>
 
       {/* Two-Panel Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-1">
         {/* Left Panel - Create New Admin */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center mb-6">
@@ -255,6 +337,7 @@ const AdminManagement = () => {
               placeholder="Enter admin name"
               required
               error={formErrors.name}
+              className="text-gray-900"
             />
 
             <Input
@@ -266,6 +349,7 @@ const AdminManagement = () => {
               placeholder="Enter email address"
               required
               error={formErrors.email}
+              className="text-gray-900"
             />
 
             <Input
@@ -277,6 +361,7 @@ const AdminManagement = () => {
               placeholder="Enter password"
               required
               error={formErrors.password}
+              className="text-gray-900"
             />
 
             <div>
@@ -292,20 +377,49 @@ const AdminManagement = () => {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Assigned Lots <span className="text-red-500">*</span>
               </label>
-              <div className="space-y-2 max-h-32 overflow-y-auto border border-gray-300 rounded-md p-2">
-                {parkingLots.map((lot) => (
-                  <label key={lot.value} className="flex items-center">
-                    <input
-                      type="checkbox"
-                      value={lot.value}
-                      checked={formData.assigned_lots.includes(lot.value)}
-                      onChange={handleLotsChange}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                    />
-                    <span className="ml-2 text-sm text-gray-700">{lot.label}</span>
-                  </label>
-                ))}
-              </div>
+              
+              {availableLots.length === 0 ? (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
+                  <p className="text-sm text-yellow-700">
+                    All parking lots are currently assigned. Please delete or reassign existing admin assignments to free up lots.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <div className="space-y-2 max-h-32 overflow-y-auto border border-gray-300 rounded-md p-2">
+                    {availableLots.map((lot) => (
+                      <label key={lot.value} className="flex items-center">
+                        <input
+                          type="checkbox"
+                          value={lot.value}
+                          checked={formData.assigned_lots.includes(lot.value)}
+                          onChange={handleLotsChange}
+                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        />
+                        <span className="ml-2 text-sm text-gray-700">{lot.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                  
+                  {/* Show assigned lots information */}
+                  {Object.keys(assignedLotsInfo).length > 0 && (
+                    <div className="mt-2 p-2 bg-gray-50 rounded-md">
+                      <p className="text-xs text-gray-600 mb-1 font-medium">Currently assigned lots:</p>
+                      <div className="max-h-24 overflow-y-auto">
+                        {Object.entries(assignedLotsInfo).map(([lotId, admins]) => {
+                          const lot = parkingLots.find(l => l.value === parseInt(lotId));
+                          return (
+                            <p key={lotId} className="text-xs text-gray-500">
+                              {lot?.label || `Lot ${lotId}`}: {admins.join(', ')}
+                            </p>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+              
               {formErrors.assigned_lots && (
                 <p className="mt-1 text-sm text-red-600">{formErrors.assigned_lots}</p>
               )}
@@ -328,7 +442,7 @@ const AdminManagement = () => {
               variant="primary"
               className="w-full"
               loading={isSubmitting}
-              disabled={isSubmitting}
+              disabled={isSubmitting || availableLots.length === 0}
             >
               <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -339,7 +453,7 @@ const AdminManagement = () => {
         </div>
 
         {/* Right Panel - Existing Admins */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-0">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center">
               <svg className="w-5 h-5 text-blue-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -356,7 +470,7 @@ const AdminManagement = () => {
               placeholder="Search admins..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full"
+              className="w-full text-gray-900"
             />
           </div>
 
@@ -386,9 +500,6 @@ const AdminManagement = () => {
                       Name
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Email
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Role
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -405,18 +516,15 @@ const AdminManagement = () => {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {filteredAdmins.length === 0 ? (
                     <tr>
-                      <td colSpan="6" className="px-4 py-8 text-center text-gray-500">
+                      <td colSpan="5" className="px-4 py-8 text-center text-gray-500">
                         {searchTerm ? 'No admins found matching your search.' : 'No admins found.'}
                       </td>
                     </tr>
                   ) : (
                     filteredAdmins.map((admin) => (
-                      <tr key={admin.user_id} className="hover:bg-gray-50">
+                      <tr key={admin.admin_id} className="hover:bg-gray-50">
                         <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                           {admin.name || admin.username}
-                        </td>
-                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {admin.email || admin.user_email}
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap">
                           <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
@@ -436,7 +544,10 @@ const AdminManagement = () => {
                           </span>
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                          <button className="text-blue-600 hover:text-blue-900">
+                          <button 
+                            onClick={() => openEditModal(admin)}
+                            className="text-blue-600 hover:text-blue-900"
+                          >
                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                             </svg>
@@ -470,6 +581,36 @@ const AdminManagement = () => {
         confirmText="Delete"
         cancelText="Cancel"
         confirmVariant="danger"
+      />
+
+      {/* Edit Admin Modal */}
+      <ConfirmationModal
+        isOpen={editModal.isOpen}
+        onClose={() => setEditModal({ isOpen: false, admin: null, editedLots: [] })}
+        onConfirm={handleEditAdmin}
+        title="Edit Admin Lots"
+        message={
+          <div className="space-y-4">
+            <p>Edit assigned lots for {editModal.admin?.name || editModal.admin?.username}:</p>
+            <div className="space-y-2 max-h-32 overflow-y-auto border border-gray-300 rounded-md p-2">
+              {parkingLots.map((lot) => (
+                <label key={lot.value} className="flex items-center">
+                  <input
+                    type="checkbox"
+                    value={lot.value}
+                    checked={editModal.editedLots.includes(lot.value)}
+                    onChange={handleEditLotsChange}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">{lot.label}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        }
+        confirmText="Save Changes"
+        cancelText="Cancel"
+        confirmVariant="primary"
       />
     </div>
   );

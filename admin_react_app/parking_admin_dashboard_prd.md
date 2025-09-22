@@ -670,7 +670,7 @@ The dashboard uses a modern, responsive layout built with Tailwind CSS, as illus
     - **Request Body**: `{ "name": "Jane Smith", "email": "jane.smith@example.com", "password": "securePassword123", "assigned_lots": [1, 3] }`
     - **Response**: `{ "message": "Admin created successfully", "user_id": 42, "role": "admin", "assigned_lots": [1, 3] }`
     - **Usage**: When "Create Admin" button is pressed on admin management screen
-  - **Admin List**: `GET /all_admin/admin_lots/` (retrieve all admin lot assignments)
+  - **Admin List**: `GET /admins/admin_lots/all` (retrieve all admin lot assignments)
     - **Response**: List of admins with their assigned parking lot IDs
     - **Usage**: Populate "Existing Admins" section of admin management screen
   - **Delete Admin**: `DELETE /admin/remove_assignment` (remove admin-lot assignment)
@@ -678,12 +678,12 @@ The dashboard uses a modern, responsive layout built with Tailwind CSS, as illus
 
 - **Live Sessions Page (Super Admin)**
 
-  - **All Sessions Data**: `GET /admin/all_session/details/` (get all parking session details for last 3 months)
+  - **All Sessions Data**: `GET /admin/sessions/details/all` (get all parking session details for last 3 months)
     - **Response**: Complete session table covering parking lots of all admins
     - **Usage**: Populate "Live Sessions" screen for super admin
 
 - **Payment Collection Page (Super Admin)**
-  - **All Sessions Data**: `GET /admin/all_session/details/` (get all parking session details for last 3 months)
+  - **All Sessions Data**: `GET /admin/sessions/details/all` (get all parking session details for last 3 months)
     - **Usage**: Populate "Payment Collections" screen for super admin
 
 ### Admin Features

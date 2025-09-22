@@ -118,6 +118,49 @@ export const calculateTimeTrend = (currentHours, previousHours) => {
  * @returns {Object} All calculated KPIs with trends
  */
 export const calculateDashboardKPIs = (sessions, previousSessions = [], totalParkingSlots = 100) => {
+  // Helper functions
+  const calculateTotalIncome = (sessions) => {
+    const estimateAmount = (s) => {
+      if (typeof s.total_amount === 'number' && s.total_amount > 0) return s.total_amount;
+      const duration = typeof s.duration_hrs === 'number' ? s.duration_hrs : 0;
+      if (!s.end_time || duration <= 0) return 0;
+      const rate = s.vehicle_type === 'car' ? 50 : 30;
+      return Math.round(duration * rate * 100) / 100;
+    };
+    return sessions
+      .filter(s => !!s.end_time)
+      .reduce((sum, s) => sum + estimateAmount(s), 0);
+  };
+
+  const calculateTotalSessions = (sessions) => sessions.length;
+
+  const calculateRevenuePerSlot = (income, slots) => 
+    slots > 0 ? income / slots : 0;
+
+  const calculateActiveParticipants = (sessions) => 
+    sessions.filter(s => !s.end_time).length;
+
+  const calculateAverageSessionTime = (sessions) => {
+    const completedSessions = sessions.filter(s => s.end_time && s.duration_hrs);
+    return completedSessions.length > 0 
+      ? completedSessions.reduce((sum, s) => sum + (s.duration_hrs || 0), 0) / completedSessions.length
+      : 0;
+  };
+
+  const calculateOccupancyRate = (active, totalSlots) => 
+    totalSlots > 0 ? (active / totalSlots) * 100 : 0;
+
+  const calculateTrend = (current, previous) => {
+    if (previous === 0) return 'up';
+    return current > previous ? 'up' : current < previous ? 'down' : 'neutral';
+  };
+
+  const calculateTimeTrend = (current, previous) => {
+    if (previous === 0) return 'up';
+    const diff = ((current - previous) / previous) * 100;
+    return Math.abs(diff) < 5 ? 'neutral' : diff > 0 ? 'up' : 'down';
+  };
+
   // Current period calculations
   const totalIncome = calculateTotalIncome(sessions);
   const totalSessions = calculateTotalSessions(sessions);

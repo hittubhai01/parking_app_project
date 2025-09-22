@@ -8,6 +8,7 @@ import AdminLayout from './layouts/AdminLayout';
 import ProtectedRoute from './guards/ProtectedRoute';
 import RoleBasedRoute from './guards/RoleBasedRoute';
 import './App.css';
+import { initializeMockData } from './services/mockData';
 
 function App() {
   return (
@@ -42,6 +43,9 @@ function App() {
                     </ProtectedRoute>
                   }
                 >
+                  {/* Index route redirects to dashboard */}
+                  <Route index element={<Navigate to={redirects.afterLogin} replace />} />
+
                   {routes
                     .filter(route => route.protected)
                     .map(route => (
@@ -64,11 +68,8 @@ function App() {
                   }
                 </Route>
 
-                {/* Default redirect */}
-                <Route path="/" element={<Navigate to={redirects.authenticated} replace />} />
-                
                 {/* Catch all route - redirect to dashboard */}
-                <Route path="*" element={<Navigate to={redirects.authenticated} replace />} />
+                <Route path="*" element={<Navigate to={redirects.afterLogin} replace />} />
               </Routes>
             </Suspense>
           </div>

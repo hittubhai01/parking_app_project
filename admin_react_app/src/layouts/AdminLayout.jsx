@@ -8,6 +8,7 @@ const AdminLayout = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -16,6 +17,10 @@ const AdminLayout = () => {
 
   const handleMenuToggle = () => {
     setSidebarOpen(!sidebarOpen);
+  };
+
+  const handleSidebarCollapseChange = (collapsed) => {
+    setIsSidebarCollapsed(collapsed);
   };
 
   return (
@@ -41,18 +46,21 @@ const AdminLayout = () => {
         {/* Sidebar Component */}
         <Sidebar 
           isOpen={sidebarOpen} 
-          onClose={() => setSidebarOpen(false)} 
+          onClose={() => setSidebarOpen(false)}
+          onCollapseChange={handleSidebarCollapseChange}
         />
 
         {/* Main content */}
-        <div className="flex flex-col flex-1 overflow-hidden md:ml-64">
+        <div className={`flex flex-col flex-1 overflow-hidden transition-all duration-300 ease-in-out ${
+          isSidebarCollapsed ? 'md:ml-0' : 'md:ml-52'
+        }`}>
           <main 
             id="main-content"
             className="flex-1 relative overflow-y-auto focus:outline-none"
             role="main"
             aria-label="Main content"
           >
-            <div className="py-6">
+            <div className="py-2">
               <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
                 <Outlet />
               </div>

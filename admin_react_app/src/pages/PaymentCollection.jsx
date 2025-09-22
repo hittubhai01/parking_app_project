@@ -6,6 +6,7 @@ import LoadingSpinner from '../components/common/LoadingSpinner';
 import Button from '../components/common/Button';
 import Input from '../components/forms/Input';
 import Select from '../components/forms/Select';
+import Modal from '../components/common/Modal'; // Import your Modal component
 import paymentService from '../services/paymentService';
 import { calculatePaymentKPIs, getPaymentAction, formatCurrency } from '../utils/helpers';
 
@@ -35,6 +36,10 @@ const PaymentCollection = () => {
   // State for pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
+
+  // State for modal and selected payment
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedPayment, setSelectedPayment] = useState(null);
 
   // Status filter options
   const statusFilterOptions = [
@@ -133,7 +138,6 @@ const PaymentCollection = () => {
       paymentService.exportToCSV(dataToExport, 'payment_records.csv');
     } catch (error) {
       console.error('Export failed:', error);
-      // You could show a toast notification here
     }
   };
 
@@ -151,10 +155,31 @@ const PaymentCollection = () => {
     setCurrentPage(page);
   };
 
+  // Update your handlePaymentAction function with debug logs
   const handlePaymentAction = (payment, action) => {
-    // Handle payment actions (View, Collect, Retry)
-    console.log(`${action.label} action for payment:`, payment.payment_id);
-    // Implement specific action logic here based on action type
+    console.log('Payment action triggered:', action, 'for payment:', payment);
+    
+    if (action.type === 'view') {
+      console.log('Opening modal for payment:', payment.payment_id);
+      setSelectedPayment(payment);
+      setIsModalOpen(true);
+    } else if (action.type === 'collect') {
+      console.log('Collect payment:', payment.payment_id);
+      alert(`Collect payment for ${payment.vehicle_reg_no} - Amount: ${formatCurrency(payment.amount)}`);
+    } else if (action.type === 'retry') {
+      console.log('Retry payment:', payment.payment_id);
+      alert(`Retry payment for ${payment.vehicle_reg_no}`);
+    }
+  };
+
+  // Add debug to see modal state changes
+  useEffect(() => {
+    console.log('Modal state - isOpen:', isModalOpen, 'selectedPayment:', selectedPayment);
+  }, [isModalOpen, selectedPayment]);
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedPayment(null);
   };
 
   const getActionButton = (payment) => {
@@ -163,7 +188,7 @@ const PaymentCollection = () => {
     const colorClasses = {
       blue: 'text-blue-600 border-blue-600 hover:bg-blue-50',
       green: 'text-green-600 border-green-600 hover:bg-green-50',
-      gray: 'text-gray-600 border-gray-600 hover:bg-gray-50'
+      gray: 'text-white border-gray-600 hover:bg-gray-50'
     };
 
     return (
@@ -221,7 +246,7 @@ const PaymentCollection = () => {
       </div>
 
       {/* Filter Section */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+      <div className="bg-white text-gray-950 rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
         <h3 className="text-lg font-semibold mb-4">Filter Payments</h3>
         
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -229,6 +254,7 @@ const PaymentCollection = () => {
           <Input
             name="search"
             type="text"
+            color="gray-500"
             label="Search"
             value={filters.search}
             onChange={handleFilterChange}
@@ -276,7 +302,7 @@ const PaymentCollection = () => {
             <Button
               variant="outline"
               onClick={clearFilters}
-              className="w-full sm:w-auto"
+              className="w-full sm:w-auto text-white"
             >
               Clear Filters
             </Button>
@@ -287,7 +313,7 @@ const PaymentCollection = () => {
               variant="outline"
               onClick={handleExportCSV}
               disabled={filteredData.length === 0 && paymentData.length === 0}
-              className="w-full sm:w-auto"
+              className="w-full sm:w-auto text-white"
             >
               Export CSV
             </Button>
@@ -296,7 +322,7 @@ const PaymentCollection = () => {
               variant="outline"
               onClick={handleRefresh}
               loading={loading}
-              className="w-full sm:w-auto"
+              className="w-full sm:w-auto text-white"
             >
               Refresh
             </Button>
@@ -307,7 +333,7 @@ const PaymentCollection = () => {
       {/* Payment Records Section */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <div className="flex justify-between items-center mb-6">
-          <h3 className="text-lg font-semibold">Payment Records</h3>
+          <h3 className="text-lg text-black font-semibold">Payment Records</h3>
           <div className="text-sm text-gray-500">
             Showing {startIndex + 1}-{Math.min(endIndex, filteredData.length)} of {filteredData.length} records
           </div>
@@ -426,7 +452,7 @@ const PaymentCollection = () => {
                       variant={currentPage === page ? "primary" : "outline"}
                       size="sm"
                       onClick={() => handlePageChange(page)}
-                      className="w-8 h-8 p-0"
+                      className="w-8 h-8 p-0 text-white"
                     >
                       {page}
                     </Button>
@@ -439,6 +465,7 @@ const PaymentCollection = () => {
                 size="sm"
                 onClick={() => handlePageChange(currentPage + 1)}
                 disabled={currentPage === totalPages}
+                className=" text-white"
               >
                 Next
               </Button>
@@ -446,6 +473,92 @@ const PaymentCollection = () => {
           </div>
         )}
       </div>
+
+      {/* Payment Details Modal */}
+      <Modal
+        isOpen={isModalOpen}
+        onClose={closeModal}
+        title="Payment Details"
+        size="lg"
+      >
+        {selectedPayment && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium text-gray-500">Payment ID</label>
+                <p className="text-sm text-gray-900">{selectedPayment.payment_id}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-500">Vehicle</label>
+                <p className="text-sm text-gray-900">{selectedPayment.vehicle_reg_no}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-500">Amount</label>
+                <p className="text-sm text-gray-900 font-semibold">{formatCurrency(selectedPayment.amount)}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-500">Status</label>
+                <div className="mt-1">
+                  <StatusBadge status={selectedPayment.status} />
+                </div>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-500">Date</label>
+                <p className="text-sm text-gray-900">
+                  {new Date(selectedPayment.date).toLocaleDateString('en-IN')}
+                </p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-500">Duration</label>
+                <p className="text-sm text-gray-900">{selectedPayment.duration}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-500">Vehicle Type</label>
+                <p className="text-sm text-gray-900 capitalize">{selectedPayment.vehicle_type}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-500">Session ID</label>
+                <p className="text-sm text-gray-900">{selectedPayment.session_id}</p>
+              </div>
+            </div>
+            
+            {selectedPayment.start_time && (
+              <div>
+                <label className="text-sm font-medium text-gray-500">Start Time</label>
+                <p className="text-sm text-gray-900">
+                  {new Date(selectedPayment.start_time).toLocaleString('en-IN')}
+                </p>
+              </div>
+            )}
+            
+            {selectedPayment.end_time && (
+              <div>
+                <label className="text-sm font-medium text-gray-500">End Time</label>
+                <p className="text-sm text-gray-900">
+                  {new Date(selectedPayment.end_time).toLocaleString('en-IN')}
+                </p>
+              </div>
+            )}
+            
+            <div className="flex justify-end space-x-3 pt-4">
+              <Button variant="outline" onClick={closeModal}>
+                Close
+              </Button>
+              {selectedPayment.status === 'PENDING' && (
+                <Button 
+                  variant="primary" 
+                  onClick={() => {
+                    closeModal();
+                    handlePaymentAction(selectedPayment, { type: 'collect', label: 'Collect' });
+                  }}
+                >
+                  Collect Payment
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };

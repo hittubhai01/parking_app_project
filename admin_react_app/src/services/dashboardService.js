@@ -1,154 +1,205 @@
 import api from './api';
 import { API_ENDPOINTS, USER_ROLES } from '../utils/constants';
-// import mockApiService from './mockApiService';
 
 /**
- * Fetch session details based on user role
- * Super Admin: Gets all sessions across all lots
- * Admin: Gets sessions for their assigned lots only
+ * Fetch session details based on user role from mock data store
  */
 export const fetchSessionDetails = async (user) => {
   try {
+    if (!user) return { sessions: [] };
+
     if (user.role === USER_ROLES.SUPER_ADMIN) {
-      // Super Admin gets all session details
-      const response = await api.get(API_ENDPOINTS.ADMIN.ALL_SESSION_DETAILS);
-      return response.data;
-    } else {
-      // Regular Admin gets session details for their user ID
-      const response = await api.get(`${API_ENDPOINTS.ADMIN.SESSION_DETAILS}/${user.user_id}`);
-      return response.data;
+      const { data } = await api.get(API_ENDPOINTS.ADMIN.ALL_SESSION_DETAILS);
+      return { sessions: Array.isArray(data) ? data : [] };
     }
+
+    const { data } = await api.get(`${API_ENDPOINTS.ADMIN.SESSION_DETAILS}/${user.user_id}`);
+    return { sessions: Array.isArray(data) ? data : [] };
+  
+  
   } catch (error) {
-    console.error('Error fetching session details:', error);
+    console.error('Error fetching session details from API:', error);
     throw error;
   }
 };
 
 /**
- * Fetch admin lots information
+ * Fetch admin lots information from mock data store
  */
-export const fetchAdminLots = async (adminId) => {
+export const fetchAdminLots = async (adminId, role) => {
   try {
-    const response = await api.get(`${API_ENDPOINTS.ADMIN.ALL_ADMIN_LOTS}${adminId}/`);
-    return response.data;
+    if (!adminId) return [];
+
+    if (role === USER_ROLES.SUPER_ADMIN) {
+      // Get all admin assignments for super admin
+      const { data } = await api.get(API_ENDPOINTS.ADMIN.ALL_ADMIN_LOTS);
+      // Flatten to a simple list of lot ids mapping is not needed for dashboard counts
+      // The API returns {meta: {total}, data: [{admin_id, admin_name, assigned_lots: [{parkinglot_id, ...}]}]}
+      const assignments = Array.isArray(data?.data) ? data.data : [];
+      const lotIds = new Set();
+      assignments.forEach(a => (a.assigned_lots || []).forEach(lot => lotIds.add(lot.parkinglot_id)));
+      return Array.from(lotIds).map(id => ({ parkinglot_id: id }));
+    }
+
+    // Regular admin
+    const { data } = await api.get(`/admin/admin_lots/${adminId}`);
+    // API returns object with assigned_lots: [{ parkinglot_id, parking_name, location, parking_type, assigned_date }]
+    return Array.isArray(data?.assigned_lots) ? data.assigned_lots : [];
   } catch (error) {
-    console.error('Error fetching admin lots:', error);
-    throw error;
+    console.error('Error fetching admin lots from API:', error);
+    return [];
   }
 };
 
 /**
- * Generate sample revenue data for chart (mock data until real API is available)
+ * Fetch detailed admin information with assigned lots
+ */
+export const fetchAdminDetails = async (adminId) => {
+  try {
+    if (!adminId) return null;
+
+    const { data } = await api.get(`/admin/admin_lots/${adminId}`);
+    
+    // Return the admin data with the new structure
+    return {
+      admin_id: data.admin_id,
+      admin_name: data.admin_name,
+      admin_email: data.admin_email,
+      admin_phone_no: data.admin_phone_no,
+      admin_address: data.admin_address,
+      joining_date: data.joining_date,
+      status: data.status,
+      assigned_lots: Array.isArray(data.assigned_lots) ? data.assigned_lots : [],
+      // Future fields
+      permissions: data.permissions,
+      shift_timings: data.shift_timings
+    };
+  } catch (error) {
+    console.error('Error fetching admin details from API:', error);
+    return null;
+  }
+};
+
+/**
+ * Calculate available slots for a parking lot
+ */
+const calculateAvailableSlots = () => 0; // Not available via API; not used in dashboard
+
+/**
+ * Generate revenue chart data from mock sessions
  */
 export const generateRevenueChartData = (sessions) => {
-  // Group sessions by date and calculate daily revenue
+  // Group sessions by date and calculate daily revenue (with fallback estimation)
   const revenueByDate = {};
   
+  const estimateAmount = (s) => {
+    if (typeof s.total_amount === 'number' && s.total_amount > 0) return s.total_amount;
+    const duration = typeof s.duration_hrs === 'number' ? s.duration_hrs : 0;
+    if (duration <= 0) return 0;
+    const rate = s.vehicle_type === 'car' ? 50 : 30; // fallback base rates
+    return Math.round(duration * rate * 100) / 100;
+  };
+  
   sessions.forEach(session => {
-    if (session.end_time && session.duration_hrs) {
+    if (session.end_time) {
       const date = new Date(session.start_time).toLocaleDateString('en-IN', {
         month: 'short',
         day: 'numeric'
       });
-      
-      const revenue = session.duration_hrs * (session.vehicle_type === 'car' ? 50 : 30);
+      const amount = estimateAmount(session);
+      if (!amount) return;
       
       if (revenueByDate[date]) {
-        revenueByDate[date] += revenue;
+        revenueByDate[date] += amount;
       } else {
-        revenueByDate[date] = revenue;
+        revenueByDate[date] = amount;
       }
     }
   });
 
-  // Convert to chart format
   return Object.entries(revenueByDate).map(([period, revenue]) => ({
     period,
-    revenue
+    revenue: Math.round(revenue * 100) / 100
   }));
 };
 
 /**
- * Get dashboard data with error handling and loading states
+ * Get dashboard data with mock data fallback
  */
 export const getDashboardData = async (user) => {
-  // // Use mock API service if enabled
-  // if (mockApiService.isEnabled) {
-  //   try {
-  //     return await mockApiService.getDashboardData(user);
-  //   } catch (error) {
-  //     console.error('Mock API failed:', error);
-  //     // Fall through to real API or fallback mock data
-  //   }
-  // }
-
   try {
     const [sessionData, adminLots] = await Promise.all([
       fetchSessionDetails(user),
-      user.user_id ? fetchAdminLots(user.user_id) : Promise.resolve([])
+      user?.user_id ? fetchAdminLots(user.user_id, user.role) : Promise.resolve([])
     ]);
 
     const revenueData = generateRevenueChartData(sessionData.sessions || []);
+    
+    // Calculate total parking slots without using debug endpoints
+    // Heuristic: Admin → 50 slots per assigned lot; Super Admin → 100 default
+    let totalParkingSlots = 0;
+    if (user?.role === USER_ROLES.ADMIN) {
+      totalParkingSlots = (adminLots?.length || 0) * 50;
+    }
+    if (!totalParkingSlots) totalParkingSlots = 100;
     
     return {
       sessions: sessionData.sessions || [],
       adminLots: adminLots || [],
       revenueData,
-      totalParkingSlots: adminLots?.reduce((total, lot) => total + (lot.total_slots || 0), 0) || 100
-    };
-  } catch (error) {
-    // Return mock data if API fails (for development)
-    console.warn('API failed, using mock data:', error.message);
-    
-    const mockSessions = [
-      {
-        ticket_id: "T001",
-        parkinglot_id: 1,
-        vehicle_reg_no: "KA01AB1234",
-        user_id: 1,
-        start_time: "2024-01-01T10:00:00Z",
-        end_time: "2024-01-01T12:00:00Z",
-        duration_hrs: 2,
-        vehicle_type: "car"
-      },
-      {
-        ticket_id: "T002",
-        parkinglot_id: 1,
-        vehicle_reg_no: "KA01CD5678",
-        user_id: 2,
-        start_time: "2024-01-01T11:00:00Z",
-        end_time: null,
-        duration_hrs: null,
-        vehicle_type: "motorcycle"
-      },
-      {
-        ticket_id: "T003",
-        parkinglot_id: 2,
-        vehicle_reg_no: "KA01EF9012",
-        user_id: 3,
-        start_time: "2024-01-01T09:00:00Z",
-        end_time: "2024-01-01T11:30:00Z",
-        duration_hrs: 2.5,
-        vehicle_type: "car"
-      }
-    ];
-
-    const mockRevenueData = [
-      { period: 'Jan 1', revenue: 225 },
-      { period: 'Jan 2', revenue: 180 },
-      { period: 'Jan 3', revenue: 320 },
-      { period: 'Jan 4', revenue: 290 },
-      { period: 'Jan 5', revenue: 410 },
-      { period: 'Jan 6', revenue: 380 },
-      { period: 'Jan 7', revenue: 450 }
-    ];
-
-    return {
-      sessions: mockSessions,
-      adminLots: [],
-      revenueData: mockRevenueData,
-      totalParkingSlots: 20,
+      totalParkingSlots: totalParkingSlots || 100,
       isUsingMockData: true
     };
+  } catch (error) {
+    console.warn('Mock data failed, using fallback data:', error.message);
+    return getFallbackDashboardData();
   }
+};
+
+/**
+ * Fallback data in case mock data store is empty
+ */
+const getFallbackDashboardData = () => {
+  const mockSessions = [
+    {
+      ticket_id: "T001",
+      parkinglot_id: 1,
+      vehicle_reg_no: "KA01AB1234",
+      user_id: 1,
+      start_time: "2024-01-01T10:00:00Z",
+      end_time: "2024-01-01T12:00:00Z",
+      duration_hrs: 2,
+      vehicle_type: "car",
+      total_amount: 100
+    },
+    {
+      ticket_id: "T002",
+      parkinglot_id: 1,
+      vehicle_reg_no: "KA01CD5678",
+      user_id: 2,
+      start_time: "2024-01-01T11:00:00Z",
+      end_time: null,
+      duration_hrs: null,
+      vehicle_type: "motorcycle",
+      total_amount: 0
+    }
+  ];
+
+  const mockRevenueData = [
+    { period: 'Jan 1', revenue: 225 },
+    { period: 'Jan 2', revenue: 180 },
+    { period: 'Jan 3', revenue: 320 }
+  ];
+
+  const mockAdminLots = [
+    { parkinglot_id: 1, parkinglot_name: "Main Parking Lot", total_slots: 50, available_slots: 25 }
+  ];
+
+  return {
+    sessions: mockSessions,
+    adminLots: mockAdminLots,
+    revenueData: mockRevenueData,
+    totalParkingSlots: 50,
+    isUsingMockData: true
+  };
 };

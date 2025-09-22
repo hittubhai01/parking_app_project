@@ -226,8 +226,8 @@ router.post('/assign_lot', authenticateToken, requireSuperAdmin, async (req, res
   }
 });
 
-// GET /all_admin/admin_lots/ - Get all admin lot assignments (Super Admin Only)
-router.get('/all_admin/admin_lots/', authenticateToken, requireSuperAdmin, async (req, res) => {
+// GET /admin_lots/all - Get all admin lot assignments (Super Admin Only)
+router.get('/admin_lots/all', authenticateToken, requireSuperAdmin, async (req, res) => {
   try {
     logger.business('All admin lots retrieval', {
       requestedBy: req.user.user_id,
@@ -236,12 +236,48 @@ router.get('/all_admin/admin_lots/', authenticateToken, requireSuperAdmin, async
 
     const adminAssignments = [];
 
-    // Get all admin assignments
+    // Get all admin assignments with detailed information
     for (const [adminId, assignment] of mockDataStore.adminLotAssignments.entries()) {
+      const adminDetails = mockDataStore.admins.get(adminId);
+      
+      // Build detailed assigned lots with location information
+      const detailedAssignedLots = assignment.assigned_lots.map(lot => {
+        const parkingLot = mockDataStore.parkingLots.get(lot.parkinglot_id);
+        return {
+          parkinglot_id: lot.parkinglot_id,
+          parking_name: parkingLot?.name || `Parking Lot ${lot.parkinglot_id}`,
+          location: {
+            address: parkingLot?.location?.address || `${parkingLot?.location?.city || 'Unknown City'}`,
+            landmark: parkingLot?.location?.landmark || 'Near Main Road',
+            coordinates: {
+              latitude: parkingLot?.location?.coordinates?.latitude || 19.0760,
+              longitude: parkingLot?.location?.coordinates?.longitude || 72.8777
+            }
+          },
+          parking_type: parkingLot?.parking_type || 'commercial',
+          assigned_date: lot.assignment_date || lot.assigned_date || new Date().toISOString()
+        };
+      });
+
       adminAssignments.push({
-        user_id: assignment.admin_id,
+        admin_id: assignment.admin_id,
         admin_name: assignment.admin_name,
-        assigned_lots: assignment.assigned_lots.map(lot => lot.parkinglot_id)
+        admin_email: adminDetails?.user_email,
+        admin_phone_no: adminDetails?.user_phone,
+        admin_address: adminDetails?.user_address || 'Admin Office Address',
+        joining_date: adminDetails?.created_at,
+        status: assignment.is_active ? 'active' : 'inactive',
+        assigned_lots: detailedAssignedLots,
+        // Include permissions and shift_timings for some admins (future use)
+        ...(adminId % 2 === 0 && {
+          permissions: ["*"],
+          shift_timings: {
+            start_time: "10:00",
+            end_time: "18:00",
+            shift_name: "Regular Shift",
+            days: ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday"]
+          }
+        })
       });
     }
 
@@ -251,9 +287,9 @@ router.get('/all_admin/admin_lots/', authenticateToken, requireSuperAdmin, async
     });
 
     res.status(200).json({
-      success: true,
-      status: 'success',
-      message: 'Successfully retrieved all admin lot assignments.',
+      meta: {
+        total: adminAssignments.length
+      },
       data: adminAssignments
     });
 
@@ -383,24 +419,42 @@ router.get('/admin_lots/:user_id', authenticateToken, requireAdminAccess, async 
     // Get full admin details
     const adminDetails = mockDataStore.admins.get(targetUserId);
 
-    const response = {
-      success: true,
-      user_id: assignment.admin_id,
-      admin_name: assignment.admin_name,
-      user_email: adminDetails?.user_email,
-      user_phone: adminDetails?.user_phone,
-      assigned_lots: assignment.assigned_lots.map(lot => ({
+    // Build detailed assigned lots with location information
+    const detailedAssignedLots = assignment.assigned_lots.map(lot => {
+      const parkingLot = mockDataStore.parkingLots.get(lot.parkinglot_id);
+      return {
         parkinglot_id: lot.parkinglot_id,
-        lot_name: lot.lot_name,
-        assignment_date: lot.assignment_date
-      })),
-      assignment_date: assignment.assignment_date,
-      is_active: assignment.is_active,
-      profile: adminDetails?.profile,
-      admin_details: adminDetails?.admin_details,
-      statistics: adminDetails?.statistics,
-      created_at: adminDetails?.created_at,
-      last_login: adminDetails?.last_login
+        parking_name: parkingLot?.name || `Parking Lot ${lot.parkinglot_id}`,
+        location: {
+          address: parkingLot?.location?.address || `${parkingLot?.location?.city || 'Unknown City'}`,
+          landmark: parkingLot?.location?.landmark || 'Near Main Road',
+          coordinates: {
+            latitude: parkingLot?.location?.coordinates?.latitude || 19.0760,
+            longitude: parkingLot?.location?.coordinates?.longitude || 72.8777
+          }
+        },
+        parking_type: parkingLot?.parking_type || 'commercial',
+        assigned_date: lot.assignment_date || lot.assigned_date || new Date().toISOString()
+      };
+    });
+
+    const response = {
+      admin_id: assignment.admin_id,
+      admin_name: assignment.admin_name,
+      admin_email: adminDetails?.user_email,
+      admin_phone_no: adminDetails?.user_phone,
+      admin_address: adminDetails?.user_address || 'Admin Office Address',
+      joining_date: adminDetails?.created_at,
+      status: assignment.is_active ? 'active' : 'inactive',
+      assigned_lots: detailedAssignedLots
+      // Future fields commented out for now
+      // "permissions": ["*"],
+      // "shift_timings": {
+      //   "start_time": "10:00",
+      //   "end_time": "18:00",
+      //   "shift_name": "Regular Shift",
+      //   "days": ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday"]
+      // }
     };
 
     logger.business('Admin lots retrieved successfully', {
@@ -426,8 +480,8 @@ router.get('/admin_lots/:user_id', authenticateToken, requireAdminAccess, async 
   }
 });
 
-// GET /admin/all_session/details/ - Get all session details (Super Admin Only)
-router.get('/all_session/details/', authenticateToken, requireSuperAdmin, async (req, res) => {
+// GET /admin/sessions/details/all - Get all session details (Super Admin Only)
+router.get('/sessions/details/all', authenticateToken, requireSuperAdmin, async (req, res) => {
   try {
     logger.business('All sessions retrieval', {
       requestedBy: req.user.user_id,

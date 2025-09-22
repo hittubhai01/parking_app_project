@@ -1,20 +1,39 @@
 import api from './api';
-import { API_ENDPOINTS } from '../utils/constants';
+import { API_ENDPOINTS, USER_ROLES } from '../utils/constants';
 
 /**
  * Check out a vehicle from parking session
  * @param {string} ticketId - The ticket ID to check out
+ * @param {string} paymentMethod - The payment method (cash, digital, or card)
  * @returns {Promise} API response
  */
-export const checkOutVehicle = async (ticketId) => {
+export const checkOutVehicle = async (ticketId, paymentMethod = 'digital') => {
   try {
-    const response = await api.post(API_ENDPOINTS.ADMIN.SESSION_CHECKOUT, {
-      ticket_id: ticketId
-    });
+    console.log('checkOutVehicle called with:', { ticketId, paymentMethod });
+    
+    const requestData = {
+      ticket_id: ticketId,
+      payment_method: paymentMethod
+    };
+    
+    console.log('Sending checkout request:', requestData);
+    
+    const response = await api.post(API_ENDPOINTS.ADMIN.SESSION_CHECKOUT, requestData);
     return response.data;
   } catch (error) {
     console.error('Error checking out vehicle:', error);
-    throw error;
+    
+    // Handle 403 error specifically
+    if (error.response?.status === 403) {
+      throw new Error('Access denied: Insufficient permissions to check out vehicle');
+    }
+    
+    // Handle other errors
+    if (error.response?.status === 404) {
+      throw new Error('Ticket not found or already checked out');
+    }
+    
+    throw new Error(error.response?.data?.message || 'Failed to check out vehicle');
   }
 };
 
@@ -25,101 +44,151 @@ export const checkOutVehicle = async (ticketId) => {
  */
 export const getActiveSessions = async (user) => {
   try {
-    // This would typically call the session details API and filter for active sessions
-    // For now, we'll use mock data that matches the UI design
-    
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
+    if (!user) return { activeSessions: [], stats: { activeParticipants: 0, totalRevenue: 0, avgSessionTime: '0h 0m', occupancyRate: 0 }, recentActivity: [] };
+
+    // Fetch sessions based on role
+    const { data } = user.role === USER_ROLES.SUPER_ADMIN
+      ? await api.get(API_ENDPOINTS.ADMIN.ALL_SESSION_DETAILS)
+      : await api.get(`${API_ENDPOINTS.ADMIN.SESSION_DETAILS}/${user.user_id}`);
+
+    const sessions = Array.isArray(data) ? data : [];
+    const now = Date.now();
+
+    const toHsl = (str) => {
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
+      const h = Math.abs(hash) % 360; return `hsl(${h}, 70%, 55%)`;
+    };
+    const formatDuration = (hours) => {
+      if (!hours || hours <= 0) return '0h 0m';
+      const whole = Math.floor(hours); const mins = Math.round((hours - whole) * 60); return `${whole}h ${mins}m`;
+    };
+
+    // Active sessions are those without end_time
+    const active = sessions.filter(s => !s.end_time).map(s => {
+      const startMs = new Date(s.start_time).getTime();
+      const elapsedHours = Math.max(0, (now - startMs) / (1000 * 60 * 60));
+      return {
+        ticket_id: s.ticket_id,
+        participant_name: s.participant_name || s.vehicle_reg_no || 'Participant',
+        vehicle_reg_no: s.vehicle_reg_no,
+        parkinglot_id: s.parkinglot_id,
+        start_time: s.start_time,
+        duration: formatDuration(elapsedHours),
+        vehicle_type: s.vehicle_type,
+        avatar_color: toHsl(s.vehicle_reg_no || s.ticket_id || String(startMs))
+      };
+    });
+
+    // Stats
+    const activeParticipants = active.length;
+    const avgSessionTimeHours = activeParticipants > 0
+      ? active.reduce((sum, p) => {
+          const start = new Date(p.start_time).getTime();
+          return sum + Math.max(0, (now - start) / (1000 * 60 * 60));
+        }, 0) / activeParticipants
+      : 0;
+    const totalRevenue = active.reduce((sum, p) => {
+      const start = new Date(p.start_time).getTime();
+      const hrs = Math.max(0, (now - start) / (1000 * 60 * 60));
+      const rate = p.vehicle_type === 'car' ? 50 : 30;
+      return sum + hrs * rate;
+    }, 0);
+    const totalSlots = 100; // heuristic; can be refined if needed
+    const occupancyRate = Math.min(100, Math.round((activeParticipants / totalSlots) * 100));
+
+    // Generate recent activity from session data
+    const recentActivity = sessions
+      .filter(s => s.end_time) // Only completed sessions
+      .sort((a, b) => new Date(b.end_time) - new Date(a.end_time))
+      .slice(0, 10)
+      .map(s => ({
+        type: 'leave',
+        message: `Vehicle ${s.vehicle_reg_no} checked out`,
+        time: new Date(s.end_time).toLocaleTimeString(),
+        timestamp: s.end_time
+      }));
+
     return {
-      activeSessions: [
-        {
-          ticket_id: "T001",
-          participant_name: "John Doe",
-          vehicle_reg_no: "ABC-123",
-          parkinglot_id: "P1",
-          start_time: "2024-01-08T10:25:00Z",
-          duration: "1h 25m",
-          vehicle_type: "car",
-          avatar_color: "#8B5CF6" // Purple
-        },
-        {
-          ticket_id: "T002", 
-          participant_name: "Sarah Miller",
-          vehicle_reg_no: "XYZ-456",
-          parkinglot_id: "P2",
-          start_time: "2024-01-08T09:45:00Z",
-          duration: "2h 5m",
-          vehicle_type: "motorcycle",
-          avatar_color: "#EC4899" // Pink
-        },
-        {
-          ticket_id: "T003",
-          participant_name: "Robert Wilson",
-          vehicle_reg_no: "DEF-789",
-          parkinglot_id: "P3",
-          start_time: "2024-01-08T11:10:00Z",
-          duration: "1h 0m",
-          vehicle_type: "car",
-          avatar_color: "#EF4444" // Red
-        },
-        {
-          ticket_id: "T004",
-          participant_name: "Lisa Brown",
-          vehicle_reg_no: "GHI-012",
-          parkinglot_id: "P1",
-          start_time: "2024-01-08T08:30:00Z",
-          duration: "3h 40m",
-          vehicle_type: "car",
-          avatar_color: "#10B981" // Green
-        },
-        {
-          ticket_id: "T005",
-          participant_name: "Mike Johnson",
-          vehicle_reg_no: "JKL-345",
-          parkinglot_id: "P2",
-          start_time: "2024-01-08T10:00:00Z",
-          duration: "2h 10m",
-          vehicle_type: "car",
-          avatar_color: "#6366F1" // Indigo
-        }
-      ],
+      activeSessions: active,
       stats: {
-        activeParticipants: 24,
-        totalRevenue: 186.50,
-        avgSessionTime: "2h 15m",
-        occupancyRate: 78
+        activeParticipants,
+        totalRevenue: Math.round(totalRevenue * 100) / 100,
+        avgSessionTime: formatDuration(avgSessionTimeHours),
+        occupancyRate
       },
-      recentActivity: [
-        {
-          type: "join",
-          message: "New participant joined (Vehicle: MNO-678)",
-          time: "2 minutes ago"
-        },
-        {
-          type: "payment",
-          message: "Payment received from ABC-123 (₹7.50)",
-          time: "5 minutes ago"
-        },
-        {
-          type: "leave",
-          message: "Participant left (Vehicle: PQR-901)",
-          time: "8 minutes ago"
-        },
-        {
-          type: "join",
-          message: "New participant joined (Vehicle: STU-234)",
-          time: "12 minutes ago"
-        },
-        {
-          type: "payment",
-          message: "Payment received from XYZ-456 (₹5.00)",
-          time: "15 minutes ago"
-        }
-      ]
+      recentActivity
     };
   } catch (error) {
     console.error('Error fetching active sessions:', error);
+    
+    // Return mock data for development if API fails
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('Using mock data due to API error');
+      return getMockActiveSessions();
+    }
+    
     throw error;
   }
+};
+
+// Mock data for development/testing
+const getMockActiveSessions = () => {
+  const mockSessions = [
+    {
+      ticket_id: 'TKT001',
+      participant_name: 'John Doe',
+      vehicle_reg_no: 'ABC123',
+      parkinglot_id: 'PARK001',
+      start_time: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+      vehicle_type: 'car'
+    },
+    {
+      ticket_id: 'TKT002',
+      participant_name: 'Jane Smith',
+      vehicle_reg_no: 'XYZ789',
+      parkinglot_id: 'PARK001',
+      start_time: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
+      vehicle_type: 'motorcycle'
+    }
+  ];
+
+  const now = Date.now();
+  const toHsl = (str) => {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    const h = Math.abs(hash) % 360; return `hsl(${h}, 70%, 55%)`;
+  };
+  const formatDuration = (hours) => {
+    if (!hours || hours <= 0) return '0h 0m';
+    const whole = Math.floor(hours); const mins = Math.round((hours - whole) * 60); return `${whole}h ${mins}m`;
+  };
+
+  const active = mockSessions.map(s => {
+    const startMs = new Date(s.start_time).getTime();
+    const elapsedHours = Math.max(0, (now - startMs) / (1000 * 60 * 60));
+    return {
+      ...s,
+      duration: formatDuration(elapsedHours),
+      avatar_color: toHsl(s.vehicle_reg_no || s.ticket_id || String(startMs))
+    };
+  });
+
+  return {
+    activeSessions: active,
+    stats: {
+      activeParticipants: active.length,
+      totalRevenue: 150.75,
+      avgSessionTime: '1h 30m',
+      occupancyRate: 45
+    },
+    recentActivity: [
+      {
+        type: 'leave',
+        message: 'Vehicle DEF456 checked out',
+        time: '10:30 AM',
+        timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString()
+      }
+    ]
+  };
 };

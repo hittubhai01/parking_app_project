@@ -432,19 +432,21 @@ router.post('/session/checkout', authenticateToken, requireAdmin, async (req, re
       });
     }
 
-    // Check if admin has access to this parking lot
-    const adminAssignment = mockDataStore.adminLotAssignments.get(req.user.user_id);
-    if (!adminAssignment || !adminAssignment.assigned_lots.some(lot => lot.parkinglot_id === session.parkinglot_id)) {
-      logger.businessError('Check-out failed - admin not assigned to lot', {
-        lotId: session.parkinglot_id,
-        adminId: req.user.user_id,
-        requestedBy: req.user.user_id
-      });
+    // Check if admin has access to this parking lot (super admins have access to all lots)
+    if (req.user.role !== 'super_admin') {
+      const adminAssignment = mockDataStore.adminLotAssignments.get(req.user.user_id);
+      if (!adminAssignment || !adminAssignment.assigned_lots.some(lot => lot.parkinglot_id === session.parkinglot_id)) {
+        logger.businessError('Check-out failed - admin not assigned to lot', {
+          lotId: session.parkinglot_id,
+          adminId: req.user.user_id,
+          requestedBy: req.user.user_id
+        });
 
-      return res.status(403).json({
-        success: false,
-        error: 'You are not assigned to manage this parking lot'
-      });
+        return res.status(403).json({
+          success: false,
+          error: 'You are not assigned to manage this parking lot'
+        });
+      }
     }
 
     // Calculate duration and amount using enhanced pricing logic

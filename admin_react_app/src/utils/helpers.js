@@ -145,6 +145,11 @@ export const formatAssignedLots = (assignedLots) => {
   }
   
   if (Array.isArray(assignedLots)) {
+    // Handle new format: array of objects with parkinglot_id
+    if (typeof assignedLots[0] === 'object' && assignedLots[0].parkinglot_id) {
+      return assignedLots.map(lot => `P${lot.parkinglot_id}`).join(', ');
+    }
+    // Handle old format: array of lot IDs
     return assignedLots.map(lot => `P${lot}`).join(', ');
   }
   
@@ -188,18 +193,17 @@ export const getPaymentStatusColor = (status) => {
       return 'bg-gray-100 text-gray-800';
   }
 };
-
 // Get action button for payment status
 export const getPaymentAction = (status) => {
   switch (status) {
     case 'COMPLETED':
-      return { label: 'View', variant: 'outline', color: 'blue' };
+      return { type: 'view', label: 'View', variant: 'outline', color: 'blue' };
     case 'PENDING':
-      return { label: 'Collect', variant: 'primary', color: 'green' };
+      return { type: 'collect', label: 'Collect', variant: 'primary', color: 'green' };
     case 'FAILED':
-      return { label: 'Retry', variant: 'primary', color: 'green' };
+      return { type: 'retry', label: 'Retry', variant: 'primary', color: 'green' };
     default:
-      return { label: 'View', variant: 'outline', color: 'gray' };
+      return { type: 'view', label: 'View', variant: 'outline', color: 'gray' };
   }
 };
 

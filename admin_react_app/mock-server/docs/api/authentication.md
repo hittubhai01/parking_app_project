@@ -222,7 +222,7 @@ const { access_token } = await loginResponse.json();
 localStorage.setItem('jwt_token', access_token);
 
 // Use token for subsequent requests
-const apiResponse = await fetch('/admin/all_session/details/', {
+const apiResponse = await fetch('/admin/sessions/details/all', {
   headers: {
     'Authorization': `Bearer ${localStorage.getItem('jwt_token')}`,
     'Content-Type': 'application/json'
