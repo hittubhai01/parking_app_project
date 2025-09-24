@@ -8,7 +8,7 @@ import Select from '../components/forms/Select';
 import { ConfirmationModal } from '../components/common/Modal';
 import adminService from '../services/adminService';
 import { calculateAdminKPIs, formatAdminStatus, formatAssignedLots } from '../utils/helpers';
-import { validateName, validateEmail, validatePassword, validateRequired } from '../utils/validators';
+import { validateName, validateEmail, validatePassword, validateRequired, validatePhone } from '../utils/validators';
 
 const AdminManagement = () => {
   const { user } = useAuth();
@@ -29,6 +29,8 @@ const AdminManagement = () => {
     name: '',
     email: '',
     password: '',
+    phone_no: '',
+    address: '',
     assigned_lots: [],
   });
   const [formErrors, setFormErrors] = useState({});
@@ -43,8 +45,8 @@ const AdminManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, admin: null });
 
-  // Generate parking lots data (1-25 as per mock server)
-  const parkingLots = Array.from({ length: 25 }, (_, index) => ({
+  // Generate parking lots data (1-80)
+  const parkingLots = Array.from({ length: 80 }, (_, index) => ({
     value: index + 1,
     label: `Parking Lot P${index + 1}`
   }));
@@ -175,6 +177,16 @@ const AdminManagement = () => {
       errors.password = passwordValidation.message;
     }
     
+    const phoneValidation = validatePhone(formData.phone_no);
+    if (!phoneValidation.isValid) {
+      errors.phone_no = phoneValidation.message;
+    }
+    
+    const addressValidation = validateRequired(formData.address, 'Address');
+    if (!addressValidation.isValid) {
+      errors.address = addressValidation.message;
+    }
+    
     const lotsValidation = validateRequired(formData.assigned_lots.length > 0, 'Assigned lots');
     if (!lotsValidation.isValid) {
       errors.assigned_lots = 'Please select at least one parking lot';
@@ -209,6 +221,8 @@ const AdminManagement = () => {
         name: '',
         email: '',
         password: '',
+        phone_no: '',
+        address: '',
         assigned_lots: [],
       });
       setFormErrors({});
@@ -349,6 +363,30 @@ const AdminManagement = () => {
               placeholder="Enter email address"
               required
               error={formErrors.email}
+              className="text-gray-900"
+            />
+
+            <Input
+              name="phone_no"
+              type="tel"
+              label="Phone Number"
+              value={formData.phone_no}
+              onChange={handleInputChange}
+              placeholder="Enter 10-digit phone number"
+              required
+              error={formErrors.phone_no}
+              className="text-gray-900"
+            />
+
+            <Input
+              name="address"
+              type="text"
+              label="Address"
+              value={formData.address}
+              onChange={handleInputChange}
+              placeholder="Enter address"
+              required
+              error={formErrors.address}
               className="text-gray-900"
             />
 

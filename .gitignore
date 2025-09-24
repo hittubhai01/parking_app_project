@@ -164,3 +164,9 @@ Thumbs.db
 *.swp
 *.swo
 *~
+
+#playwright Ignores
+test-results/
+playwright-report/
+playwright/.cache/
+playwright.config.ts-temp*
