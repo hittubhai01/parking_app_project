@@ -16,7 +16,7 @@ parking_app_integration/
 │   ├── tests/                  # Appium / pytest
 │   └── build.gradle
 
-├── Backend(cloud_server)/              # Flask/Django backend
+├── Backend(cloud_server)/              # Flask/Django/FastAPI backend
 │   ├── src/
 │   ├── Dockerfile
 │   └── docker-compose.yml
@@ -131,7 +131,7 @@ This repository uses a **monorepo strategy** where all components live together:
 
 - `react_admin_app/` → React-based Admin Web App  
 
-- `Backend/` → Flask/FastAPI Backend  
+- `Backend/` → Flask/Django/FastAPI Backend  
 
 - `vision-parking/` → Android User App  
 
