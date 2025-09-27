@@ -16,12 +16,12 @@ parking_app_integration/
 │   ├── tests/                  # Appium / pytest
 │   └── build.gradle
 
-├── Backend(cloud_server)/              # FastAPI/Flask backend
+├── Backend(cloud_server)/              # Flask/Django backend
 │   ├── src/
 │   ├── Dockerfile
 │   └── docker-compose.yml
 
-├── Parking-Server(parking_detection system)/         # Optional: ML microservice
+├── Parking-Server(parking_detection system)/         # ML service   Flask/FastAPI
 │   ├── models/
 │   └── Dockerfile
 
@@ -31,10 +31,11 @@ parking_app_integration/
 
 ├── .github/
 │   └── workflows/
-│       ├── android.yml        # Android app CI
-│       ├── cloud.yml          # Backend CI
-│       ├── ml.yml             # ML service CI
-│       └── e2e.yml            # Full stack E2E tests
+│       ├── android-e2e.yml        # Android E2E Tests with Backend
+│       ├── backend-ci.yml         # Backend CI
+│       └── admin-app-ci.yml       # Admin react app CI
+│       ├── ml.yml                 # ML service CI
+│       └── e2e.yml                # Full stack E2E tests
 
 ├── e2e-artifacts/             # Stores test logs/results
 ├── README.md
@@ -49,15 +50,15 @@ parking_app_integration/
 
 Only run workflows when relevant folders change:
 
-**Example: `.github/workflows/cloud.yml`**
+**Example: `.github/workflows/backend-ci.yml`**
 ```yaml
 on:
   push:
     paths:
-      - 'cloud_server/**'
+      - 'Backend/**'
   pull_request:
     paths:
-      - 'cloud_server/**'
+      - 'Backend/**'
 ```
 
 ### 🧪 2. Full E2E Integration Test Workflow
@@ -65,18 +66,18 @@ on:
 Triggered when **any major service** changes:
 
 ```yaml
-# .github/workflows/e2e.yml
+# .github/workflows/android-e2e.yml
 on:
   push:
     paths:
-      - 'cloud_server/**'
-      - 'user_android_app/**'
-      - 'parking_detection/**'
+      - 'Backend/**'
+      - 'Vision-Parking/**'
+      - 'Parking-Server/**'
   pull_request:
     paths:
-      - 'cloud_server/**'
-      - 'user_android_app/**'
-      - 'parking_detection/**'
+      - 'Backend/**'
+      - 'Vision-Parking/**'
+      - 'Parking-Server/**'
 
 jobs:
   e2e:
@@ -86,10 +87,10 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Start Backend + Detection
-        run: docker-compose -f cloud_server/docker-compose.yml up -d
+        run: docker-compose -f Backend/docker-compose.yml up -d
 
       - name: Run Android E2E Tests
-        run: ./user_android_app/tests/run_e2e.sh
+        run: ./Vision-Parking/tests/run_e2e.sh
 ```
 
 ### 🧩 3. Optional Manual Dispatch
@@ -107,10 +108,9 @@ on:
 
 | Component           | Workflow File                 | Trigger Path                     |
 |---------------------|-------------------------------|----------------------------------|
-| Android App         | `.github/workflows/android.yml` | `user_android_app/**`            |
-| Backend Server      | `.github/workflows/cloud.yml`   | `cloud_server/**`                |
-| ML Detection        | `.github/workflows/ml.yml`      | `parking_detection/**`           |
-| E2E Integration     | `.github/workflows/e2e.yml`     | Any of the above folders         |
+| Backend Server      | `.github/workflows/backend-ci.yml`   | `Backend/**`                |
+| ML Detection        | `.github/workflows/ml.yml`      | `Parking-Server/**`           |
+| E2E Integration     | `.github/workflows/android-e2e.yml`     | Any of the above folders         |
 
 ---
 
