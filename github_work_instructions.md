@@ -58,8 +58,8 @@ parking_app_integration/
 
 1. **Clone the Repository**
    ```bash
-   git clone https://github.com/OWNER/REPO_NAME.git   # Download the repository to your local machine
-   cd REPO_NAME                                       # Move into the project directory
+   git clone https://github.com/neeraj975arora/parking_app_integration.git   # Download the repository to your local machine
+   cd parking_app_integrationE                                               # Move into the project directory
    ```
    Replace `OWNER` and `REPO_NAME` with the actual GitHub username/organization and repository name.
 
