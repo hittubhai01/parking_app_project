@@ -84,24 +84,31 @@ parking_app_integration/
    git commit -m "[Backend] Add feature: your feature description"   # Commit with a descriptive message
    ```
 
-6. **Push Your Branch to GitHub**
+6. **Push Your Branch to GitHub(step 7 and 8 are optional only needed if explicit review is required by owner of repo)**
    ```bash
    git push origin feature/your-feature-name   # Upload your branch and commits to GitHub
    ```
 
-7. **Create a Pull Request (PR) on GitHub**
+7. **Create a Pull Request (PR) on GitHub (optional if code review step is needed)**
    - Go to the repository on GitHub.
    - You will see a prompt to create a Pull Request for your newly pushed branch.
    - Click "Compare & pull request".
    - Fill in the PR title and description, and select `main` as the base branch.
    - Submit the PR.
 
-8. **Request Review and Wait for Approval**
+8. **Request Review and Wait for Approval(optional if code review step is needed)**
    - Assign reviewers as per the repository's guidelines.
    - Wait for feedback and make any requested changes (repeat steps 4–6 as needed).
 
-9. **PR Merged by Owner**
+9. **PR Merged by Owner or developer**
    - Only the repository owner or someone with write/merge permissions should merge the PR after approval.
+     ```bash
+     git checkout main                   # Switch to main branch
+     git pull origin main                 # Update local main with latest changes
+     git merge feature/your-feature-name  # Merge feature branch into main
+     git push origin main                 # Push merged main to remote
+     ```
+
 
 **Note:**
 If you are not a direct collaborator (i.e., you do not have push access), you would need to fork the repository and follow a fork-based workflow. See the note at the end of this section.
