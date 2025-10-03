@@ -16,124 +16,64 @@ This project is the complete backend for a smart parking system, including a RES
 - [Docker](https://docs.docker.com/get-docker/)
 - [Docker Compose](https://docs.docker.com/compose/install/)
 
-## How to Run the Application
-
-Follow these steps to get the application running on your local machine.
-
-### 1. Set Up Environment Variables
-
-The application uses a `.env` file to manage environment variables. An example file (`.env.example`) is provided.
-
-First, make a copy of the example file:
-
-```sh
-# For Windows (Command Prompt)
-copy .env.example .env
-
-# For Windows (PowerShell)
-cp .env.example .env
-
-# For Linux/macOS
-cp .env.example .env
-```
-
-The default values in the `.env` file are pre-configured to work with the `docker-compose.yml` setup, so you don't need to change anything unless you want to customize the database credentials or secret keys.
-
-### 2. Build and Start the Containers
-    
-#### Make sure the commands are compatible with your OS(recommended to use powershell or bash for windows)
+### 1. Build and Start the Containers
 
 This command will build the Docker images for the Flask application and Nginx, and start all the services (app, database, proxy) in the background.
 
+### Check any other container is not running use these commands
 ```sh
+docker ps -a (We will show all the containers in current docker run time)
+docker-compose ps
+```
+
+### To see a docker volume
+```
+docker volume ls
+```
+
+
+### If you want to remove all the containerthen you can use this command
+
+```sh
+docker rm $(docker ps -aq)
+```
+
+### Build the container
+```
 docker-compose up --build -d
 ```
+### Down the cotainers
 
-# 3. Initialize the Database
+```
+docker-compose down
+```
+### To see logs in a particular container
 
-The first time you set up this project you need to ensure the database schema is created from the SQLAlchemy models and recorded in Alembic migration history.
+```
+docker-compose logs -f (container<name>)
+```
 
-**Important:** if the repository already contains a `migrations/` folder (or `app/migrations/`) then **do not run `flask db init`** again — use the existing migrations and `stamp` the DB if needed (see below). We recommend `app/migrations` as the canonical migrations folder and configuring Flask-Migrate accordingly (example shown at the end).
+### 2. (Option A)  Initialize the Database
 
----
+The first time you start the application, you need to create the database tables from the SQLAlchemy models. The following commands use Flask-Migrate to do this.
 
-## If you are starting from scratch (no migrations present)
-
-Run these commands **inside the running `app` container** (preferred format shown):
+Run these commands one by one:
 
 ```sh
-# start containers first
-docker-compose up -d
-
-# create alembic env (only run once when no migrations folder exists)
+# 1. Initialize the migration environment (only needs to be run once ever)
 docker-compose exec app flask db init
 
-# generate the initial migration from your models
+# 2. Create the initial migration script
 docker-compose exec app flask db migrate -m "Initial migration"
 
-# apply migrations to the database
+# 3. Apply the migration to the database
 docker-compose exec app flask db upgrade
 ```
-
-### If your container environment does not automatically expose the Flask app, use:
-
-```sh
-docker-compose exec -e FLASK_APP=wsgi:app app flask db ...
-```
-
-### but prefer `docker-compose exec app flask db ...` if `FLASK_APP` is already configured in the container.
-
 ---
-
-## If a migrations folder already exists (common for this repo)
-
-**Do not** re-run `flask db init`. Instead:
-
-1. Confirm the DB’s current revision:
-
-```sh
-docker-compose exec app flask db current
-```
-
-2. If the database already contains the tables (for example you loaded them from SQL), mark the DB as up-to-date with the existing migration history (this **creates the `alembic_version` row** and prevents Alembic from trying to recreate existing tables):
-
-```sh
-docker-compose exec app flask db stamp head
-```
-
-3. To generate a migration for later model changes:
-
-```sh
-# generate change script (autogenerate)
-docker-compose exec app flask db migrate -m "Describe change"
-
-# apply it
-docker-compose exec app flask db upgrade
-```
-
----
-
-## Important Alembic tips & commands
-
-* Show the migration history:
-
-```sh
-docker-compose exec app flask db history --verbose
-```
-
-* Show heads (multiple heads = multiple independent revision chains):
-
-```sh
-docker-compose exec app flask db heads
-```
-
-
----
-
 
 ## 🗄️ Populating the Database with Initial Data
 
-After migrations have created the tables (via flask db upgrade or by stamping to head + applying delta migrations), populate your database with initial data using your SQL script. Run the following commands:
+After running your migrations to create the tables, you can populate your database with initial data using your SQL script. Run the following commands:
 
 ```sh
 # Copy the SQL file into the running database container
@@ -143,6 +83,27 @@ docker cp populate_parking_data.sql backend-db-1:/populate_parking_data.sql
 docker exec -it backend-db-1 psql -U parking_user -d parking_db -f /populate_parking_data.sql
 ```
 
+### 4.(Option B) Initialize the Database
+The first time you start the application, you need to create the database tables from the SQLAlchemy models. The following commands use Flask-Migrate to do this.
+
+Run these commands one by one:
+
+```sh
+# 1. Initialize/Copy the database environment (only needs to be run once ever)
+
+docker cp init_db.sql backend-db-1:/init_db.sql
+
+docker exec -it backend-db-1 psql -U parking_user -d parking_db -f /init_db.sql
+
+# 2. Populate the data to the database container
+
+docker cp seed_data.sql backend-db-1:/seed_data.sql
+
+docker exec -it backend-db-1 psql -U parking_user -d parking_db -f /seed_data.sql
+
+```
+
+```sh
 Your application is now running!
 
 ## Accessing the Application
@@ -157,6 +118,10 @@ Once the services are running, you can access the application in your web browse
   - **URL:** `http://localhost/apidocs`
   - **Description:** This is an interactive page where you can see all available API endpoints, their required parameters, and test them directly from your browser. This is the primary tool for API testing.
 
+```
+
+
+
 ## Running the Tests
 
 The project includes two types of tests.
@@ -167,6 +132,27 @@ These tests check the application's internal logic using an in-memory database. 
 
 ```sh
 docker-compose exec app pytest
+```
+### To run a particular Single pytest File/Script
+```sh
+docker-compose exec app pytest tests/test_admin_api.py
+
+### To run a particular Single pytest function within a file/Script
+```
+docker-compose exec app pytest tests/test_admin_api.py::test_vehicle_type_billing_flow -v
+```
+
+
+### This command is used to check the database in a container
+
+```
+docker-compose exec db psql -U parking_user -d parking_db 
+```
+
+### See all the tables in a database
+
+```sh
+\dt
 ```
 
 ### End-to-End Test (e2e_test.py)
@@ -234,6 +220,96 @@ To stop all the running containers, use:
 docker-compose down
 ``` 
 =======
+# vibe_coding-parking_app_cloud_server
 
-## 📚 API Endpoints & Structure Reference
-For a complete list of all endpoints and their request/response formats, see [API Specs (REST_API_Specs)](../REST_API_Specs/ADMIN_APP_REST_API_SPECS.md).
+## 🚦 New & Updated API Endpoints (v2.0)
+
+The following endpoints have been added or updated in Version 2.0. All admin endpoints require a JWT token for a user with `role: admin`.
+
+### Vehicle Session Management
+
+#### Vehicle Check-In
+- **POST** `/admin/session/checkin`
+- **Request:**
+  ```json
+  {
+    "vehicle_reg_no": "DL01AB1234",
+    "slot_id": 12,
+    "lot_id": 3,
+    "vehicle_type": "Car"
+  }
+  ```
+- **Response:**
+  ```json
+  {
+    "msg": "Vehicle checked in",
+    "session_id": "<uuid>"
+  }
+  ```
+
+#### Vehicle Check-Out
+- **POST** `/admin/session/checkout`
+- **Request:**
+  ```json
+  {
+    "vehicle_reg_no": "DL01AB1234"
+  }
+  ```
+- **Response:**
+  ```json
+  {
+    "amount_paid": 40.0,
+    "duration_hours": 2,
+    "checkout_time": "2025-07-04T13:10:00Z"
+  }
+  ```
+
+### Admin APIs
+
+#### Get Parking Lots for Admin
+- **GET** `/admin_lots/<admin_id>`
+- **Response:**
+  ```json
+  {
+    "admin_id": 1,
+    "parking_lot_ids": [1, 2, 3]
+  }
+  ```
+
+#### Daily Closure & Outstanding Payment
+- **POST** `/admin/closure`
+- **Request:**
+  ```json
+  {
+    "date": "2025-07-04",
+    "payment_made": 500.0
+  }
+  ```
+- **Response:**
+  ```json
+  {
+    "opening_balance": 1000.0,
+    "today_collection": 800.0,
+    "payment_made": 500.0,
+    "closing_balance": 1300.0
+  }
+  ```
+
+---
+
+## 🔒 Role-Based Access Control (RBAC)
+- All `/admin/*` endpoints require a valid JWT for a user with `role: admin`.
+- Non-admins receive a `403 Forbidden` response.
+
+## 💰 Admin Payment Ledger & Daily Closure
+- Each admin has a daily ledger entry tracking:
+  - `opening_balance` (previous day's closing balance)
+  - `today_collection` (sum of all check-outs for the day)
+  - `payment_made` (amount paid by admin that day)
+  - `closing_balance` (outstanding after payment)
+- The `/admin/closure` endpoint allows admins to submit their daily payment and view outstanding balances.
+
+---
+
+## 📚 Full API Reference
+For a complete list of all endpoints and their request/response formats, see [`SmartParking_API_v2.md`](./SmartParking_API_v2.md).
