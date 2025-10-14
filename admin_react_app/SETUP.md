@@ -105,10 +105,10 @@ Edit `src/utils/constants.js` and modify the `API_BASE_URL`:
 
 ```javascript
 // For Mock Server
-export const API_BASE_URL = 'http://localhost:3001'
+//export const API_BASE_URL = 'http://localhost:3001'
 
 // For Python Backend
-// export const API_BASE_URL = 'http://localhost:8000'
+ export const API_BASE_URL = 'http://localhost:80'
 
 // For Production Backend
 // export const API_BASE_URL = 'https://your-production-api.com'
@@ -172,7 +172,7 @@ npm run dev
 
 **Admin:**
 - Email: `admin@parking.com`
-- Password: `admin123`
+- Password: `password123`
 
 #### For Python Backend:
 **Super Admin Registration:**
@@ -208,7 +208,7 @@ curl -X POST http://localhost:8000/admin/register_admin \
 
 **Login Credentials:**
 - **Super Admin**: `superadmin@parking.com` / `password123`
-- **Admin**: `admin@parking.com` / `admin123`
+- **Admin**: `admin@parking.com` / `password123`
 
 ## 6. Available Scripts
 
@@ -236,7 +236,7 @@ npm test             # Run tests
 ### Default Ports
 - **React App**: `5173` (Vite default)
 - **Mock Server**: `3001`
-- **Python Backend**: `8000` (Django default) or `5000` (Flask default)
+- **Python Backend**: `8000`  or `5000` (Flask default)
 
 ### Changing Ports
 

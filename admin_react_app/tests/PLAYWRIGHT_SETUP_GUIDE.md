@@ -1,10 +1,20 @@
 ## Playwright Test Setup and CI Guide
 
+> **⚠️ Important**: This project now uses Docker backend instead of mock server. See [DOCKER_BACKEND_TEST_SETUP.md](./DOCKER_BACKEND_TEST_SETUP.md) for the complete setup guide.
+
 ### Run tests locally (via package.json scripts)
 
 Prerequisites:
 - Node.js LTS installed
 - Project dependencies installed: `npm install`
+- **Docker backend running** (see Docker setup guide)
+
+To install Playwrite if needed:
+```
+sudo npx playwright install-deps
+             or
+npx playwright install --with-deps
+```
 
 Common commands:
 ```
@@ -34,7 +44,8 @@ npm run test:settings
 ```
 
 Notes:
-- The dev servers are auto-started by Playwright config (mock API on port 3001, Vite app on port 5173).
+- The React app is auto-started by Playwright config (Vite app on port 5173).
+- The Docker backend must be running separately on port 80.
 - If ports are busy, stop other instances or kill the processes before running tests.
 
 ### Run a single page suite headed and choose browser

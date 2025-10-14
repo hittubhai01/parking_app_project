@@ -31,11 +31,6 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: 'cd mock-server && npm run dev',
-      port: 3001,
-      reuseExistingServer: !process.env.CI,
-    },
-    {
       command: 'npm run dev',
       port: 5173,
       reuseExistingServer: !process.env.CI,
