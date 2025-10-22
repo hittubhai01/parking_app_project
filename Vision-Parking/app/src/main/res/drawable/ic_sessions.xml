@@ -4,8 +4,10 @@
     android:height="24dp"
     android:viewportWidth="24"
     android:viewportHeight="24">
-    <!-- Outer circle -->
+    <!-- Clock face circle -->
     <path android:fillColor="@color/green" android:pathData="M12,2a10,10 0 1,0 0,20 10,10 0 0,0 0-20z"/>
-    <!-- P shape (approximate, using path) -->
-    <path android:fillColor="@android:color/white" android:pathData="M10,7h3a2,2 0 0,1 0,4h-2v3h-1V7zm1,1v3h2a1,1 0 1,0 0-2h-2z"/>
+    <!-- Clock hands -->
+    <path android:fillColor="@android:color/white" android:pathData="M12,6v6l4,2"/>
+    <!-- Clock center dot -->
+    <path android:fillColor="@android:color/white" android:pathData="M12,11a1,1 0 1,0 0,2 1,1 0 0,0 0-2z"/>
 </vector> 

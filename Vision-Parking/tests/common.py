@@ -86,8 +86,23 @@ def assert_validation_message(driver, expected_msgs):
 
     assert found, f"Expected toast not found. Checked for: {list(expanded_msgs)}"
 
+def assert_element_is_visible(driver, locator):
+    """
+    Waits for an element to be present and asserts that it is visible on the screen.
+    If the element is not found or not visible, the test will fail.
+    """
+    element = wait_for_element(driver, locator)
+    assert element.is_displayed(), f"Element '{locator}' was found but is not visible."
 
-
-
-
-
+def is_element_visible(driver, locator, timeout=5):
+    """
+    Checks if an element is visible without failing the test.
+    Returns True if the element is found and visible, False otherwise.
+    """
+    try:
+        WebDriverWait(driver, timeout).until(
+            EC.visibility_of_element_located(locator)
+        )
+        return True
+    except TimeoutException:
+        return False

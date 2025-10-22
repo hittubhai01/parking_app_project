@@ -6,4 +6,7 @@
     <color name="white">#FFFFFFFF</color>
     <color name="green">#4CAF50</color>
     <color name="gray">#E0E0E0</color>
+    <color name="light_green">#C8E6C9</color>
+    <!-- Splash screen vibrant green background matching target design -->
+    <color name="splash_green">#00B050</color>
 </resources>
