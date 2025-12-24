@@ -53,5 +53,11 @@ def create_app(config_name='default'):
 
     from .admin import admin_bp
     app.register_blueprint(admin_bp)
+
+    from .vehicles import vehicles_bp
+    app.register_blueprint(vehicles_bp)
+
+    from .sessions import sessions_bp
+    app.register_blueprint(sessions_bp)
     
     return app

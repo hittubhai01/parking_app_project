@@ -9,6 +9,7 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
 import android.view.MenuItem;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
+import android.content.Intent;
 
 public class ProfileActivity extends AppCompatActivity {
     @Override
@@ -34,15 +35,23 @@ public class ProfileActivity extends AppCompatActivity {
         bottomNavigationView.setOnNavigationItemSelectedListener(new BottomNavigationView.OnNavigationItemSelectedListener() {
             @Override
             public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-                if (item.getItemId() == R.id.nav_home) {
-                    finish(); // Go back to HomeActivity
+                int itemId = item.getItemId();
+                if (itemId == R.id.nav_home) {
+                    Intent intent = new Intent(ProfileActivity.this, HomeActivity.class);
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                    startActivity(intent);
+                    finish();
                     return true;
-                } else if (item.getItemId() == R.id.nav_profile) {
+                } else if (itemId == R.id.nav_sessions) {
+                    Intent intent = new Intent(ProfileActivity.this, MySessionsActivity.class);
+                    startActivity(intent);
+                    return true;
+                } else if (itemId == R.id.nav_bookings) {
+                    Intent intent = new Intent(ProfileActivity.this, BookingsActivity.class);
+                    startActivity(intent);
+                    return true;
+                } else if (itemId == R.id.nav_profile) {
                     // Already on Profile
-                    return true;
-                } else if (item.getItemId() == R.id.nav_bookings) {
-                    Toast.makeText(ProfileActivity.this, "Bookings selected", Toast.LENGTH_SHORT).show();
-                    // Implement navigation to Bookings if needed
                     return true;
                 }
                 return false;

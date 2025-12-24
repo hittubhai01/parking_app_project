@@ -1,314 +1,520 @@
-# Smart Parking System - Backend    
+# Smart Parking System - Backend
 
-This project is the complete backend for a smart parking system, including a REST API, PostgreSQL database, and Nginx reverse proxy, all containerized with Docker.
+Complete backend for a smart parking management system with REST API, PostgreSQL database, and Nginx reverse proxy, fully containerized with Docker.
 
 ## Features
 
-- **User Authentication:** Secure user registration and login using JWT.
-- **Hierarchical Parking Structure:** Full CRUD API for managing Parking Lots, Floors, Rows, and Slots.
-- **Real-time Slot Updates:** Dedicated endpoint for IoT devices (e.g., Raspberry Pi) to push slot status changes.
-- **API Documentation:** Interactive Swagger UI for exploring and testing the API.
-- **Containerized:** Fully containerized with Docker and Docker Compose for easy setup and deployment.
-- **Automated Testing:** Includes a suite of `pytest` unit/integration tests and an end-to-end system test script.
+- **User Authentication**: JWT-based secure registration and login with role-based access control (user, admin, super_admin)
+- **Vehicle Management**: Users can register and manage multiple vehicles
+- **Parking Structure**: Complete CRUD API for Parking Lots, Floors, Rows, and Slots
+- **Session Management**: Vehicle check-in/check-out with automated billing
+- **Admin Management**: Admin-to-parking-lot assignments and payment ledger tracking
+- **Real-time Updates**: IoT-ready endpoints for slot status updates
+- **API Documentation**: Interactive Swagger UI at `/apidocs`
+- **Containerized**: Docker and Docker Compose for easy deployment
+- **Automated Testing**: Comprehensive pytest suite with coverage reports
+
+## Tech Stack
+
+- **Framework**: Flask 3.0.3 with Gunicorn 22.0.0
+- **Database**: PostgreSQL 17 with SQLAlchemy 2.0.30
+- **Authentication**: JWT with Flask-JWT-Extended 4.5.3
+- **Migrations**: Flask-Migrate 4.0.7 (Alembic)
+- **API Docs**: Flasgger (Swagger UI)
+- **Testing**: Pytest with coverage and HTML reports
+- **Containerization**: Docker with docker-compose
 
 ## Prerequisites
 
-- [Docker](https://docs.docker.com/get-docker/)
-- [Docker Compose](https://docs.docker.com/compose/install/)
+- [Docker](https://docs.docker.com/get-docker/) (version 20.10+)
+- [Docker Compose](https://docs.docker.com/compose/install/) (version 2.0+)
 
-### 1. Build and Start the Containers
+## Quick Start
 
-This command will build the Docker images for the Flask application and Nginx, and start all the services (app, database, proxy) in the background.
+### 1. Clone and Navigate
 
-### Check any other container is not running use these commands
-```sh
-docker ps -a (We will show all the containers in current docker run time)
+```bash
+cd Backend
+```
+
+### 2. Environment Setup
+
+Create a `.env` file (optional - defaults are configured in docker-compose.yml):
+
+```bash
+FLASK_CONFIG=development
+DATABASE_URL=postgresql://parking_user:parking_password@db:5432/parking_db
+SECRET_KEY=your-secret-key-here
+```
+
+### 3. Build and Start Services
+
+```bash
+docker-compose up --build -d
+```
+
+This command will:
+- Build the Flask application container
+- Start PostgreSQL database with health checks
+- Start Nginx reverse proxy
+- Start pgAdmin for database management
+
+### 4. Initialize Database (ONE COMMAND!)
+
+```bash
+# Complete setup with ONE SQL file - includes everything!
+docker cp COMPLETE_DATABASE_SETUP_FIXED.sql postgres_db:/setup.sql
+docker exec -it postgres_db psql -U parking_user -d parking_db -f /setup.sql
+```
+
+This single file includes:
+- Database schema (all tables)
+- 87 parking lots across New Delhi
+- 21 users (1 super admin, 10 admins, 10 regular users)
+- 22 user vehicles
+- 10,440 parking slots
+- 100 sample parking sessions
+- Admin assignments and payment ledger
+
+
+### ⚠️ Expected Database Setup Notices (Not Errors)
+
+During execution of `COMPLETE_DATABASE_SETUP_FIXED.sql`, you may see messages like:
+
+
+✅ These messages are **expected and harmless**.
+
+**Reason:**  
+The script uses `DROP TABLE IF EXISTS` to make it safe to run multiple times.  
+If tables don’t exist (e.g., first run), PostgreSQL prints a NOTICE.
+
+**No action required** — as long as there are **no `ERROR:` messages**, the database setup completed successfully.
+
+
+**For detailed information about database setup and seeding, see [Database Seeding Information](./DataBaseSeedingInformation.md)**
+
+**Option B: Using Flask-Migrate (For development with migrations)**
+
+```bash
+# Initialize migrations (only first time)
+docker-compose exec app flask db init
+
+# Create migration
+docker-compose exec app flask db migrate -m "Initial migration"
+
+# Apply migration
+docker-compose exec app flask db upgrade
+```
+
+### 5. Verify Installation
+
+Check if all services are running:
+
+```bash
 docker-compose ps
 ```
 
-### To see a docker volume
-```
-docker volume ls
-```
-
-### If you want to remove all the containerthen you can use this command
-
-```sh
-docker rm $(docker ps -aq)
-```
-
-### Build the container
-```
-docker-compose up --build -d
-```
-### Down the cotainers
-
-```
-docker-compose down
-```
-### To see logs in a particular container
-
-```
-docker-compose logs -f (container<name>)
-```
-
-### 2. (Option A)  Initialize the Database
-
-The first time you start the application, you need to create the database tables from the SQLAlchemy models. The following commands use Flask-Migrate to do this.
-
-Run these commands one by one:
-
-```sh
-# 1. Initialize the migration environment (only needs to be run once ever)
-docker-compose exec app flask db init
-
-# 2. Create the initial migration script
-docker-compose exec app flask db migrate -m "Initial migration"
-
-# 3. Apply the migration to the database
-docker-compose exec app flask db upgrade
-```
----
-
-## 🗄️ Populating the Database with Initial Data
-
-After running your migrations to create the tables, you can populate your database with initial data using your SQL script. Run the following commands:
-
-```sh
-# Copy the SQL file into the running database container
-docker cp populate_parking_data.sql backend-db-1:/populate_parking_data.sql
-
-# Execute the SQL script inside the database container
-docker exec -it backend-db-1 psql -U parking_user -d parking_db -f /populate_parking_data.sql
-```
-
-### 4.(Option B) Initialize the Database
-The first time you start the application, you need to create the database tables from the SQLAlchemy models. The following commands use Flask-Migrate to do this.
-
-Run these commands one by one:
-
-```sh
-# 1. Initialize/Copy the database environment (only needs to be run once ever)
-
-docker cp init_db.sql backend-db-1:/init_db.sql
-
-docker exec -it backend-db-1 psql -U parking_user -d parking_db -f /init_db.sql
-
-# 2. Populate the data to the database container
-
-docker cp seed_data.sql backend-db-1:/seed_data.sql
-
-docker exec -it backend-db-1 psql -U parking_user -d parking_db -f /seed_data.sql
-
-```
-
-```sh
-Your application is now running!
+You should see:
+- `flask_app` - Running on port 5000
+- `postgres_db` - Running on port 5432
+- `nginx_server` - Running on port 80
+- `pgadmin` - Running on port 5050
 
 ## Accessing the Application
 
-Once the services are running, you can access the application in your web browser.
+### Main Application
+- **API Base URL**: `http://localhost`
+- **Swagger UI**: `http://localhost/apidocs`
+- **Health Check**: `http://localhost/` (returns welcome message)
 
-- **Main Landing Page:**
-  - **URL:** `http://localhost`
-  - **Description:** Visit this URL to see a welcome page confirming that the application is running correctly.
+### Database Management
+- **pgAdmin**: `http://localhost:5050`
+  - Email: `admin@admin.com`
+  - Password: `admin`
 
-- **API Documentation (Swagger UI):**
-  - **URL:** `http://localhost/apidocs`
-  - **Description:** This is an interactive page where you can see all available API endpoints, their required parameters, and test them directly from your browser. This is the primary tool for API testing.
+### Direct Database Access
 
+```bash
+docker-compose exec db psql -U parking_user -d parking_db
 ```
 
+Common psql commands:
+```sql
+\dt              -- List all tables
+\d table_name    -- Describe table structure
+\q               -- Quit
+```
+
+## Sample Data
+
+The database includes comprehensive sample data:
+
+### Users (Password for all: `password123`)
+- **Super Admin**: `superadmin@parking.com`
+- **Admins**: `admin10@parking.com` through `admin19@parking.com` (10 admins)
+- **Regular Users**: `user20@parking.com` through `user29@parking.com` (10 users)
+
+### Parking Lots (87 locations across New Delhi)
+- **87 parking lots** covering major areas including:
+  - Jahangirpuri, Azadpur, Kashmere Gate
+  - Pitampura, Netaji Subhash Place, Kohat Enclave
+  - Connaught Place (multiple locations)
+  - Nizamuddin, Lodhi Colony
+  - Karol Bagh, Paharganj, Jhandewalan
+  - Shalimar Bagh, Malviya Nagar
+  - And many more...
+
+### Infrastructure
+Each parking lot has:
+- 3 Floors (Ground, First, Second)
+- 4 Rows per floor (Row-A, Row-B, Row-C, Row-D)
+- 10 Slots per row (S1-S10)
+- **Total: 120 slots per parking lot**
+- **Grand Total: 10,440 parking slots across all 87 lots**
+
+### Admin Assignments
+- 10 admins managing 87 parking lots
+- Each admin manages approximately 9 parking lots
+
+### User Vehicles
+- 22 registered vehicles across 10 users
+- Mix of cars and motorcycles
+- Realistic vehicle details (make, model, year, color)
+
+### Sample Sessions
+- 100 parking sessions with realistic data
+- Distributed across different parking lots
+- Mix of completed and active sessions
+- Various vehicle types (Car, Two-Wheeler, Three-Wheeler)
+- Different payment methods (cash, card, UPI)
+
+## Documentation
+
+### 📚 Complete Documentation References
+
+- **[Database Seeding Information](./DataBaseSeedingInformation.md)** - Complete guide to database setup, schema, and sample data
+- **[Database ERD](./DB_ERD.md)** - Entity Relationship Diagram and database schema documentation
+- **[User App REST API Specs](./USER_APP_REST_API_SPECS.md)** - Complete API specifications for the mobile user app
+- **[New APIs Documentation](./NEW_APIS_DOCUMENTATION.md)** - Latest API endpoints and features
+- **[Postman API Testing Guide](./POSTMAN_API_TESTING_GUIDE.md)** - Step-by-step guide for testing APIs with Postman
 
 
-## Running the Tests
+## API Endpoints Overview
 
-The project includes two types of tests.
+### Authentication
+- `POST /auth/register` - Register new user
+- `POST /auth/login` - Login and get JWT token
 
-### Pytest (Unit/Integration Tests)
+### User Endpoints
+- `GET /user/profile` - Get user profile
+- `GET /user/vehicles` - List user vehicles
+- `POST /user/vehicles` - Add new vehicle
+- `PUT /user/vehicles/<id>` - Update vehicle
+- `DELETE /user/vehicles/<id>` - Delete vehicle
 
-These tests check the application's internal logic using an in-memory database. They are fast and ideal for running during development.
+### Parking Discovery
+- `GET /parking/lots` - List all parking lots
+- `GET /parking/lots/<id>` - Get parking lot details
+- `GET /parking/lots/<id>/availability` - Check slot availability
 
-```sh
+### Session Management
+- `POST /session/checkin` - Check-in vehicle
+- `POST /session/checkout` - Check-out vehicle
+- `GET /session/active` - Get active sessions
+- `GET /session/history` - Get session history
+
+### Admin Endpoints (Requires admin role)
+- `GET /admin/lots/<admin_id>` - Get admin's parking lots
+- `POST /admin/session/checkin` - Admin check-in vehicle
+- `POST /admin/session/checkout` - Admin check-out vehicle
+- `POST /admin/closure` - Daily closure and payment
+- `GET /admin/stats` - Get parking statistics
+
+For complete API documentation, visit: `http://localhost/apidocs`
+
+## Testing
+
+### Run All Tests
+
+```bash
 docker-compose exec app pytest
 ```
-### To run a particular Single pytest File/Script
-```sh
-docker-compose exec app pytest tests/test_admin_api.py
 
-### To run a particular Single pytest function within a file/Script
-```
-docker-compose exec app pytest tests/test_admin_api.py::test_vehicle_type_billing_flow -v
+### Run with Coverage Report
+
+```bash
+docker-compose exec app pytest --cov=app --cov-report=html
 ```
 
+### Run Specific Test File
 
-### This command is used to check the database in a container
-
-```
-docker-compose exec db psql -U parking_user -d parking_db 
-```
-
-### See all the tables in a database
-
-```sh
-\dt
+```bash
+docker-compose exec app pytest tests/test_auth.py -v
 ```
 
-### End-to-End Test (e2e_test.py)
+### Run Specific Test Function
 
-This script tests the entire live system running in Docker, including the Nginx proxy and PostgreSQL database. It's a great way to verify that all the pieces are working together correctly.
-
-**Run the script as a standalone Python script inside the app container:**
-
-```sh
-docker-compose exec app python e2e_test.py
+```bash
+docker-compose exec app pytest tests/test_admin_api.py::test_vehicle_checkin -v
 ```
 
-- The script will register a user, log in, create a parking lot, floor, row, and slot, update slot status, verify the update, and check parking lot stats.
-- **Important:** The payloads sent in this script (and in your API requests) must match the fields defined in your SQLAlchemy models. Do not include fields like `zip_code`, `state`, `country`, or `phone_number` unless they exist in the model.
-- If you see errors like `Unknown field`, check that your request data matches the model and Marshmallow schema exactly.
+### View Test Coverage
 
-#### Example Parking Lot Creation Payload
+After running tests with coverage, open `htmlcov/index.html` in your browser.
 
-```json
-{
-  "name": "Test Lot",
-  "address": "123 Test St",
-  "city": "Test City",
-  "landmark": "Near Test Landmark",
-  "latitude": 12.345,
-  "longitude": 67.890,
-  "physical_appearance": "Multi-storey",
-  "parking_ownership": "Private",
-  "parking_surface": "Concrete",
-  "has_cctv": "Yes",
-  "has_boom_barrier": "Yes",
-  "ticket_generated": "Yes",
-  "entry_exit_gates": "2",
-  "weekly_off": "Sunday",
-  "parking_timing": "8am-10pm",
-  "vehicle_types": "Car,Bike",
-  "car_capacity": 50,
-  "available_car_slots": 50,
-  "two_wheeler_capacity": 20,
-  "available_two_wheeler_slots": 20,
-  "parking_type": "Open",
-  "payment_modes": "Cash,Card",
-  "car_parking_charge": "20/hr",
-  "two_wheeler_parking_charge": "10/hr",
-  "allows_prepaid_passes": "No",
-  "provides_valet_services": "No",
-  "value_added_services": "EV Charging"
-}
+## Database Management
+
+### View Logs
+
+```bash
+# Application logs
+docker-compose logs -f app
+
+# Database logs
+docker-compose logs -f db
+
+# All services
+docker-compose logs -f
+```
+
+### Database Backup
+
+```bash
+docker-compose exec db pg_dump -U parking_user parking_db > backup_$(date +%Y%m%d).sql
+```
+
+### Database Restore
+
+```bash
+docker cp backup_20250110.sql postgres_db:/backup.sql
+docker exec -it postgres_db psql -U parking_user -d parking_db -f /backup.sql
+```
+
+### Reset Database
+
+```bash
+# Stop services
+docker-compose down
+
+# Remove volumes (WARNING: This deletes all data)
+docker volume rm backend_postgres_data
+
+# Restart and reinitialize
+docker-compose up -d
+# Then run initialization steps again
+```
+
+## Database Migrations
+
+### Create New Migration
+
+```bash
+docker-compose exec app flask db migrate -m "Description of changes"
+```
+
+### Apply Migrations
+
+```bash
+docker-compose exec app flask db upgrade
+```
+
+### Rollback Migration
+
+```bash
+docker-compose exec app flask db downgrade
+```
+
+### View Migration History
+
+```bash
+docker-compose exec app flask db history
 ```
 
 ## Troubleshooting
 
-- **Schema Mismatch Errors:**
-  - If you get errors like `Unknown field`, ensure your request data only includes fields present in the model and schema.
-  - Align your Marshmallow schema and test data with your final `models.py`.
+### Container Issues
 
-- **Test Failures:**
-  - If unit or e2e tests fail, check the error output for details about missing or extra fields, or database issues.
+**Check container status:**
+```bash
+docker-compose ps
+```
+
+**Restart specific service:**
+```bash
+docker-compose restart app
+```
+
+**Rebuild after code changes:**
+```bash
+docker-compose up --build -d
+```
+
+### Database Connection Issues
+
+**Verify database is healthy:**
+```bash
+docker-compose exec db pg_isready -U parking_user
+```
+
+**Check database exists:**
+```bash
+docker-compose exec db psql -U parking_user -l
+```
+
+### Port Conflicts
+
+If ports 80, 5000, 5432, or 5050 are already in use:
+
+1. Stop conflicting services
+2. Or modify ports in `docker-compose.yml`:
+```yaml
+ports:
+  - "8080:80"  # Change 80 to 8080
+```
+
+### Schema Mismatch Errors
+
+If you see "Unknown field" errors:
+1. Ensure your models match the database schema
+2. Run migrations: `docker-compose exec app flask db upgrade`
+3. Or reinitialize with `init_db.sql`
+
+### Permission Errors
+
+```bash
+# Fix file permissions
+sudo chown -R $USER:$USER .
+
+# Or run with sudo
+sudo docker-compose up -d
+```
+
+## Development Workflow
+
+### Making Code Changes
+
+1. Edit files in `app/` directory
+2. Changes are reflected immediately (volume mounted)
+3. For dependency changes, rebuild:
+```bash
+docker-compose up --build -d
+```
+
+### Adding New Dependencies
+
+1. Add to `app/requirements.txt`
+2. Rebuild container:
+```bash
+docker-compose up --build -d
+```
+
+### Database Schema Changes
+
+1. Modify models in `app/models.py`
+2. Create migration:
+```bash
+docker-compose exec app flask db migrate -m "Add new field"
+```
+3. Review migration in `app/migrations/versions/`
+4. Apply migration:
+```bash
+docker-compose exec app flask db upgrade
+```
+
+## Production Deployment
+
+### Environment Variables
+
+Set these in production:
+
+```bash
+FLASK_CONFIG=production
+SECRET_KEY=<strong-random-key>
+DATABASE_URL=<production-db-url>
+JWT_SECRET_KEY=<another-strong-key>
+```
+
+### Security Checklist
+
+- [ ] Change default passwords
+- [ ] Use strong SECRET_KEY
+- [ ] Enable HTTPS with SSL certificates
+- [ ] Configure CORS properly
+- [ ] Set up database backups
+- [ ] Enable logging and monitoring
+- [ ] Use environment-specific configs
+- [ ] Restrict database access
+- [ ] Set up firewall rules
+
+### Performance Optimization
+
+- Increase Gunicorn workers: `--workers 4`
+- Enable connection pooling
+- Add Redis for caching
+- Set up CDN for static files
+- Configure database indexes
+- Enable gzip compression in Nginx
 
 ## Stopping the Application
 
-To stop all the running containers, use:
+### Stop all services
 
-```sh
+```bash
 docker-compose down
-``` 
-=======
-# vibe_coding-parking_app_cloud_server
+```
 
-## 🚦 New & Updated API Endpoints (v2.0)
+### Stop and remove volumes (deletes data)
 
-The following endpoints have been added or updated in Version 2.0. All admin endpoints require a JWT token for a user with `role: admin`.
+```bash
+docker-compose down -v
+```
 
-### Vehicle Session Management
+### Stop specific service
 
-#### Vehicle Check-In
-- **POST** `/admin/session/checkin`
-- **Request:**
-  ```json
-  {
-    "vehicle_reg_no": "DL01AB1234",
-    "slot_id": 12,
-    "lot_id": 3,
-    "vehicle_type": "Car"
-  }
-  ```
-- **Response:**
-  ```json
-  {
-    "msg": "Vehicle checked in",
-    "session_id": "<uuid>"
-  }
-  ```
+```bash
+docker-compose stop app
+```
 
-#### Vehicle Check-Out
-- **POST** `/admin/session/checkout`
-- **Request:**
-  ```json
-  {
-    "vehicle_reg_no": "DL01AB1234"
-  }
-  ```
-- **Response:**
-  ```json
-  {
-    "amount_paid": 40.0,
-    "duration_hours": 2,
-    "checkout_time": "2025-07-04T13:10:00Z"
-  }
-  ```
+## Project Structure
 
-### Admin APIs
+```
+Backend/
+├── app/
+│   ├── __init__.py                      # Flask app factory
+│   ├── models.py                        # SQLAlchemy models
+│   ├── auth.py                          # Authentication routes
+│   ├── parking.py                       # Parking management routes
+│   ├── sessions.py                      # Session management routes
+│   ├── vehicles.py                      # Vehicle management routes
+│   ├── admin.py                         # Admin routes
+│   ├── config.py                        # Configuration classes
+│   ├── requirements.txt                 # Python dependencies
+│   └── migrations/                      # Database migrations
+├── tests/                               # Pytest test files
+├── nginx/
+│   └── nginx.conf                       # Nginx configuration
+├── docker-compose.yml                   # Docker services definition
+├── Dockerfile                           # Flask app container
+├── COMPLETE_DATABASE_SETUP_FIXED.sql    # Complete database setup
+├── DataBaseSeedingInformation.md        # Database seeding guide
+├── DB_ERD.md                            # Database ERD documentation
+├── USER_APP_REST_API_SPECS.md           # User app API specs
+├── ADMIN_APP_REST_API_SPECS.md          # Admin app API specs
+├── NEW_APIS_DOCUMENTATION.md            # Latest API documentation
+├── POSTMAN_API_TESTING_GUIDE.md         # Postman testing guide
+├── TESTING.md                           # Testing documentation
+├── CODEBASE_OVERVIEW.md                 # Codebase overview
+└── README.md                            # This file
+```
 
-#### Get Parking Lots for Admin
-- **GET** `/admin_lots/<admin_id>`
-- **Response:**
-  ```json
-  {
-    "admin_id": 1,
-    "parking_lot_ids": [1, 2, 3]
-  }
-  ```
+## Support
 
-#### Daily Closure & Outstanding Payment
-- **POST** `/admin/closure`
-- **Request:**
-  ```json
-  {
-    "date": "2025-07-04",
-    "payment_made": 500.0
-  }
-  ```
-- **Response:**
-  ```json
-  {
-    "opening_balance": 1000.0,
-    "today_collection": 800.0,
-    "payment_made": 500.0,
-    "closing_balance": 1300.0
-  }
-  ```
+For issues or questions:
+1. Check the troubleshooting section
+2. Review API documentation at `/apidocs`
+3. Check container logs: `docker-compose logs -f`
+4. Verify database connection and schema
 
----
+## License
 
-## 🔒 Role-Based Access Control (RBAC)
-- All `/admin/*` endpoints require a valid JWT for a user with `role: admin`.
-- Non-admins receive a `403 Forbidden` response.
-
-## 💰 Admin Payment Ledger & Daily Closure
-- Each admin has a daily ledger entry tracking:
-  - `opening_balance` (previous day's closing balance)
-  - `today_collection` (sum of all check-outs for the day)
-  - `payment_made` (amount paid by admin that day)
-  - `closing_balance` (outstanding after payment)
-- The `/admin/closure` endpoint allows admins to submit their daily payment and view outstanding balances.
-
----
-
-## 📚 Full API Reference
-For a complete list of all endpoints and their request/response formats, see [`SmartParking_API_v2.md`](./SmartParking_API_v2.md).
+[Your License Here]

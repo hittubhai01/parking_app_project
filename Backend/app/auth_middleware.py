@@ -58,7 +58,10 @@ def role_required(required_role):
                     logger.warning("Token missing role information")
                     return jsonify({"error": "Token missing role information"}), 401
                 
-                logger.debug(f"User role from token: {user_role}, required role: {required_role}")
+                # Get user_id from either 'user_id' claim or 'sub' (identity) claim
+                user_id = payload.get('user_id') or payload.get('sub')
+                
+                logger.debug(f"User role from token: {user_role}, required role: {required_role}, user_id: {user_id}")
                 
                 # Role validation logic
                 if not _has_required_role(user_role, required_role):
@@ -67,7 +70,7 @@ def role_required(required_role):
                 
                 # Add user info to request context for use in endpoints
                 request.current_user = {
-                    'user_id': payload.get('user_id'),
+                    'user_id': user_id,
                     'role': user_role
                 }
                 

@@ -1,8 +1,9 @@
 # test_data.py
 
 # Common Registration Data
-REGISTER_NAME = "New_User"
-REGISTER_PASSWORD = "new_secret123"
-REGISTER_PHONE = "0987654322"
-REGISTER_ADDRESS = "456 New St"
-REGISTER_EMAIL = "new_user@gmail.com"
+REGISTER_NAME = "Meghna9"
+REGISTER_PASSWORD = "password123"
+REGISTER_PHONE = "1234321123"
+REGISTER_ADDRESS = "456Noida"
+REGISTER_EMAIL = "meghna9@gmail.com"
+

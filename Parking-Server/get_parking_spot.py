@@ -3,7 +3,7 @@ import json
 import os
 
 # Define video path
-video_path = r"F:\Education\Education\Impressico Internship\New folder\parking_detection_system\parking1.mp4"
+video_path = r"C:\ParkingProject4\parking_app_integration\Parking-Server\parking1.mp4"
 video_name = os.path.basename(video_path)  # Extract filename (e.g., "parking1.mp4")
 
 # Load the video
@@ -69,7 +69,7 @@ for i, spot in enumerate(parking_spots):
 cv2.destroyAllWindows()
 
 # Define JSON file path
-json_file = r"F:\Education\Education\Impressico Internship\New folder\parking_detection_system\parking_spots.json"
+json_file = r"C:\ParkingProject4\parking_app_integration\Parking-Server\parking_spots.json"
 
 # Load existing data (if any)
 if os.path.exists(json_file):

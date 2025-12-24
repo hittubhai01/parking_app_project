@@ -1,10 +1,18 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
 }
 
-// Read MAPS_API_KEY from local.properties or environment
-val mapsApiKey: String =
-    if (project.hasProperty("MAPS_API_KEY")) project.property("MAPS_API_KEY") as String else System.getenv("MAPS_API_KEY") ?: ""
+// Load the properties file
+val properties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    properties.load(localPropertiesFile.inputStream())
+}
+
+// Get the Maps API key
+val mapsApiKey = properties.getProperty("MAPS_API_KEY", "AIzaSyD9q-X_oGS8oggZcXHcyXhZBY-8oKbBfGg")
 
 android {
     namespace = "com.example.visionpark"
@@ -18,17 +26,23 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        // Inject Google Maps API key as a resource
-        resValue("string", "google_maps_key", mapsApiKey)
+        // Pass the API key to the manifest
+        manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey
     }
 
     buildTypes {
+        getByName("debug") {
+            // This URL is for local development (when you run a debug build)
+            buildConfigField("String", "BASE_URL", "\"http://10.0.2.2/\"")
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            // This URL is for your production server (when you build a release APK)
+            buildConfigField("String", "BASE_URL", "\"http://52.66.5.143/\"")
         }
     }
     compileOptions {
@@ -36,11 +50,14 @@ android {
         targetCompatibility = JavaVersion.VERSION_11
     }
 
+    buildFeatures {
+        buildConfig = true
+    }
+
 }
 
 
 dependencies {
-    implementation("com.google.android.material:material:1.11.0")
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
     implementation("androidx.security:security-crypto:1.1.0-alpha06")
@@ -55,4 +72,14 @@ dependencies {
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.9.3")
     implementation("com.google.android.gms:play-services-maps:18.2.0")
+    implementation("com.google.android.gms:play-services-location:21.0.1")
+    // Google Places API for search functionality
+
+    implementation("com.google.android.libraries.places:places:3.4.0")
+    // Maps utils for IconGenerator
+    implementation("com.google.maps.android:android-maps-utils:3.4.0")
+    // Glide for image loading
+    implementation("com.github.bumptech.glide:glide:4.16.0")
+    // SwipeRefreshLayout for pull-to-refresh functionality
+    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
 }
