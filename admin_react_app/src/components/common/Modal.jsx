@@ -156,10 +156,14 @@ export const ConfirmationModal = ({
           </svg>
         </div>
 
-        {/* Message */}
-        <p className="text-sm text-gray-600 mb-6">
-          {message}
-        </p>
+        {/* Message - Fixed: Conditionally render based on message type */}
+        <div className="text-sm text-gray-600 mb-6">
+          {typeof message === 'string' ? (
+            <p>{message}</p>
+          ) : (
+            message
+          )}
+        </div>
 
         {/* Action Buttons */}
         <div className="flex space-x-3 justify-center">

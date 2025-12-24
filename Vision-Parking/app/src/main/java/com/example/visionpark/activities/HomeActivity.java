@@ -32,6 +32,7 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
@@ -47,14 +48,29 @@ import com.example.visionpark.R;
 import com.example.visionpark.utils.TokenManager;
 import com.example.visionpark.utils.ParkingDataLoader;
 import com.example.visionpark.utils.MarkerGenerator;
+import com.example.visionpark.utils.PerformanceMonitor;
 import com.example.visionpark.models.ParkingLot;
+import com.example.visionpark.api.ParkingApiService;
+import com.example.visionpark.fragments.FilterDialogFragment;
+import com.example.visionpark.adapters.ParkingLotListAdapter;
+
+import androidx.recyclerview.widget.RecyclerView;
+import androidx.recyclerview.widget.LinearLayoutManager;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.ArrayList;
 
 public class HomeActivity extends AppCompatActivity implements OnMapReadyCallback {
+    
+    // Helper class for background marker creation
+    private static class MarkerData {
+        LatLng position;
+        ParkingLot lot;
+        BitmapDescriptor customIcon;
+    }
     private static final String TAG = "HomeActivity";
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1001;
     
@@ -65,6 +81,8 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
     private ActionBarDrawerToggle drawerToggle;
     private GoogleMap mMap;
     private com.google.android.material.floatingactionbutton.FloatingActionButton fabLocation;
+    private com.google.android.material.floatingactionbutton.FloatingActionButton fabFilter;
+    private com.google.android.material.floatingactionbutton.FloatingActionButton fabToggleView;
     
     // Location related variables
     private FusedLocationProviderClient fusedLocationClient;
@@ -78,11 +96,25 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
     // Parking lot related variables
     private MarkerGenerator markerGenerator;
     private List<Marker> parkingMarkers = new java.util.ArrayList<>();
+    private List<ParkingLot> allParkingLots = new ArrayList<>();
+    private FilterDialogFragment.FilterCriteria currentFilterCriteria = new FilterDialogFragment.FilterCriteria();
+    
+    // API service
+    private ParkingApiService parkingApiService;
+    
+    // List view related variables
+    private RecyclerView recyclerViewParkingLots;
+    private ParkingLotListAdapter parkingLotListAdapter;
+    private boolean isListViewVisible = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
+
+        // Start performance monitoring
+        PerformanceMonitor.startMonitoring();
+        PerformanceMonitor.logMemoryUsage("HomeActivity onCreate start");
 
         // Initialize location services
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
@@ -91,12 +123,21 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         // Initialize Places API
         initializePlaces();
+        
+        // Initialize API service
+        parkingApiService = new ParkingApiService(this);
+        
+        // Test connectivity on startup
+        testBackendConnectivity();
 
         drawerLayout = findViewById(R.id.drawer_layout);
         navigationView = findViewById(R.id.navigation_view);
         bottomNavigationView = findViewById(R.id.bottomNavigationView);
         topAppBar = findViewById(R.id.topAppBar);
         fabLocation = findViewById(R.id.fabLocation);
+        fabFilter = findViewById(R.id.fabFilter);
+        fabToggleView = findViewById(R.id.fabQr); // Repurpose fabQr as toggle button
+        recyclerViewParkingLots = findViewById(R.id.recyclerViewParkingLots);
 
         // Set up toolbar with hamburger icon
         setSupportActionBar(topAppBar);
@@ -136,6 +177,10 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
                     intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                     startActivity(intent);
                     finish();
+                    return true;
+                } else if (id == R.id.nav_vehicles) {
+                    Intent intent = new Intent(HomeActivity.this, VehicleManagementActivity.class);
+                    startActivity(intent);
                     return true;
                 } else if (id == R.id.nav_sessions) {
                     Intent intent = new Intent(HomeActivity.this, MySessionsActivity.class);
@@ -185,12 +230,29 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
         
         // Set up location button functionality
         setupLocationButton();
+        
+        // Set up filter button functionality
+        setupFilterButton();
+        
+        // Set up view toggle button functionality
+        setupViewToggleButton();
+        
+        // Set up RecyclerView
+        setupRecyclerView();
 
         // Initialize Google Map
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.mapFragment);
         if (mapFragment != null) {
             mapFragment.getMapAsync(this);
         }
+        
+        PerformanceMonitor.logMemoryUsage("HomeActivity onCreate end");
+    }
+    
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        PerformanceMonitor.stopMonitoring();
     }
 
     // Initialize Places API
@@ -285,63 +347,164 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
     // Fetch nearby parking lots
     private void fetchNearbyParking(double lat, double lng) {
         showLoadingState();
+        PerformanceMonitor.logMemoryUsage("fetchNearbyParking start");
         
-        try {
-            // Try API first (when backend is available)
-            fetchParkingFromAPI(lat, lng);
+        Log.d(TAG, "🔍 Starting fetchNearbyParking for coordinates: " + lat + ", " + lng);
+        
+        // Use API service to get parking lots
+        parkingApiService.getNearbyParkingLots(lat, lng, 20.0, new ParkingApiService.ParkingLotsCallback() {
+            @Override
+            public void onSuccess(List<ParkingLot> parkingLots) {
+                // Run on UI thread
+                runOnUiThread(() -> {
+                    try {
+                        Log.d(TAG, "API returned " + parkingLots.size() + " parking lots");
+                        
+                        // Store all nearby lots for filtering
+                        allParkingLots = new ArrayList<>(parkingLots);
+                        
+                        // Apply current filters
+                        List<ParkingLot> filteredLots = filterParkingLots(parkingLots, currentFilterCriteria);
+                        Log.d(TAG, "After filtering: " + filteredLots.size() + " parking lots remain");
+                        
+                        // Apply performance optimization
+                        optimizeMapPerformance(filteredLots);
+                        
+                        displayParkingLotsOnMap(filteredLots);
+                        hideLoadingState();
+                        
+                    } catch (Exception e) {
+                        Log.e(TAG, "Error processing API response: " + e.getMessage(), e);
+                        hideLoadingState();
+                        handleSearchError("Failed to process parking data: " + e.getMessage());
+                    }
+                });
+            }
             
-            // Fallback to local data from SQL
-            List<ParkingLot> allLots = ParkingDataLoader.loadParkingLotsFromAssets(this);
-            List<ParkingLot> nearbyLots = ParkingDataLoader.getNearbyParkingLots(
-               this, allLots, lat, lng, 5.0); // 5km radius
-            
-            // Apply performance optimization
-            optimizeMapPerformance(nearbyLots);
-            
-            displayParkingLotsOnMap(nearbyLots);
-            hideLoadingState();
-            
-        } catch (Exception e) {
-            hideLoadingState();
-            handleSearchError("Failed to load parking data: " + e.getMessage());
-        }
+            @Override
+            public void onError(String error) {
+                // Run on UI thread
+                runOnUiThread(() -> {
+                    Log.e(TAG, "API error: " + error);
+                    hideLoadingState();
+                    
+                    // Fallback to local data
+                    Log.d(TAG, "Falling back to local JSON data");
+                    try {
+                        List<ParkingLot> allLots = ParkingDataLoader.loadParkingLotsFromAssets(HomeActivity.this);
+                        List<ParkingLot> nearbyLots = ParkingDataLoader.getNearbyParkingLots(
+                           HomeActivity.this, allLots, lat, lng, 20.0);
+                        
+                        // Store all nearby lots for filtering
+                        allParkingLots = new ArrayList<>(nearbyLots);
+                        
+                        // Apply current filters
+                        List<ParkingLot> filteredLots = filterParkingLots(nearbyLots, currentFilterCriteria);
+                        
+                        displayParkingLotsOnMap(filteredLots);
+                        
+                        // Show user that we're using offline data
+                        Toast.makeText(HomeActivity.this, "Using offline data. Check internet connection.", Toast.LENGTH_LONG).show();
+                        
+                    } catch (Exception e) {
+                        handleSearchError("Failed to load parking data: " + e.getMessage());
+                    }
+                });
+            }
+        });
     }
 
-    // Future API integration
-    private void fetchParkingFromAPI(double lat, double lng) {
-        // TODO: Implement API call to GET /parking?lat=&lng=&radius=
-        // This will be implemented when backend is available
-        Log.d(TAG, "API integration not yet implemented, using local data");
-    }
+
 
     // Display parking lots on map
     private void displayParkingLotsOnMap(List<ParkingLot> parkingLots) {
         try {
+            Log.d(TAG, "displayParkingLotsOnMap called with " + (parkingLots != null ? parkingLots.size() : "null") + " parking lots");
+            
             // Clear existing markers
             clearParkingMarkers();
             
             if (parkingLots == null || parkingLots.isEmpty()) {
+                Log.d(TAG, "No parking lots to display");
                 Toast.makeText(this, "No parking lots found in this area", Toast.LENGTH_SHORT).show();
+                // Update list view with empty data
+                if (parkingLotListAdapter != null) {
+                    parkingLotListAdapter.updateParkingLots(new ArrayList<>());
+                }
                 return;
             }
             
-            markerGenerator = new MarkerGenerator(this);
-            
-            for (ParkingLot lot : parkingLots) {
-                LatLng position = new LatLng(lot.getLatitude(), lot.getLongitude());
-                
-                Marker marker = mMap.addMarker(new MarkerOptions()
-                    .position(position)
-                    .icon(BitmapDescriptorFactory.fromBitmap(markerGenerator.createParkingMarker(lot)))
-                    .title(lot.getName())
-                    .snippet(lot.getDisplayFee()));
-                
-                // Store reference for later use
-                marker.setTag(lot);
-                parkingMarkers.add(marker);
+            if (mMap == null) {
+                Log.e(TAG, "Map is not ready yet, cannot display markers");
+                return;
             }
             
-            Log.d(TAG, "Displayed " + parkingLots.size() + " parking lots on map");
+            // Performance optimization: Limit markers and use simple markers for very large datasets only
+            final List<ParkingLot> optimizedLots;
+            boolean useSimpleMarkers = parkingLots.size() > 100; // Increased threshold to show custom markers more often
+            
+            if (parkingLots.size() > 50) {
+                // Sort by distance and limit to 50 closest
+                Collections.sort(parkingLots, (p1, p2) -> Double.compare(p1.getDistance(), p2.getDistance()));
+                optimizedLots = new ArrayList<>(parkingLots.subList(0, 50));
+                Log.d(TAG, "Performance optimization: Limited to 50 closest parking lots");
+            } else {
+                optimizedLots = parkingLots;
+            }
+            
+            if (useSimpleMarkers) {
+                // Use simple markers for better performance
+                createSimpleMarkers(optimizedLots);
+            } else {
+                // Move heavy marker creation to background thread for smaller datasets
+                new Thread(() -> {
+                    try {
+                        MarkerGenerator markerGen = new MarkerGenerator(this);
+                        List<MarkerData> markerDataList = new ArrayList<>();
+                        
+                        // Create marker data in background
+                        for (ParkingLot lot : optimizedLots) {
+                            LatLng position = new LatLng(lot.getLatitude(), lot.getLongitude());
+                            
+                            MarkerData markerData = new MarkerData();
+                            markerData.position = position;
+                            markerData.lot = lot;
+                            
+                            try {
+                                markerData.customIcon = BitmapDescriptorFactory.fromBitmap(markerGen.createParkingMarker(lot));
+                            } catch (Exception e) {
+                                Log.e(TAG, "Failed to create custom marker bitmap for " + lot.getName() + ": " + e.getMessage());
+                                markerData.customIcon = null; // Will use default marker
+                            }
+                            
+                            markerDataList.add(markerData);
+                        }
+                        
+                        // Add markers to map on UI thread in batches
+                        runOnUiThread(() -> addMarkersInBatches(markerDataList));
+                        
+                    } catch (Exception e) {
+                        Log.e(TAG, "Error in background marker creation: " + e.getMessage());
+                        // Fallback to simple markers on UI thread
+                        runOnUiThread(() -> createSimpleMarkers(optimizedLots));
+                    }
+                }).start();
+            }
+            
+            // Move camera to show the first parking lot
+            if (!optimizedLots.isEmpty()) {
+                ParkingLot firstLot = optimizedLots.get(0);
+                LatLng firstPosition = new LatLng(firstLot.getLatitude(), firstLot.getLongitude());
+                mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(firstPosition, 15));
+                Log.d(TAG, "Moved camera to " + firstLot.getName());
+            }
+            
+            // Update list view with the same data (use original list, not optimized)
+            if (parkingLotListAdapter != null) {
+                parkingLotListAdapter.updateParkingLots(parkingLots);
+            }
+            
+            Log.d(TAG, "Displayed " + optimizedLots.size() + " parking lots on map and " + parkingLots.size() + " in list");
             
         } catch (Exception e) {
             handleSearchError("Failed to display parking lots: " + e.getMessage());
@@ -360,9 +523,13 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
     public void onMapReady(@NonNull GoogleMap googleMap) {
         mMap = googleMap;
         
-        // Move camera to a default location (e.g., New Delhi)
-        LatLng defaultLocation = new LatLng(28.6139, 77.2090);
+        // Move camera to a default location (Impressico Business Solution, Noida)
+        LatLng defaultLocation = new LatLng(28.600765, 77.307174);
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(defaultLocation, 12f));
+        
+        // Automatically load parking lots for the default location
+        fetchNearbyParking(defaultLocation.latitude, defaultLocation.longitude);
+        
         // Update map with location settings if permission is granted
         updateMapWithLocationSettings();
         
@@ -381,14 +548,7 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     // Show parking lot details
     private void showParkingLotDetails(ParkingLot parkingLot) {
-        String details = "Name: " + parkingLot.getName() + "\n" +
-                        "Fee: " + parkingLot.getDisplayFee() + "\n" +
-                        "Available Car Slots: " + parkingLot.getAvailableCarSlots() + 
-                        "/" + parkingLot.getTotalCarSlots() + "\n" +
-                        "Available Two-Wheeler Slots: " + parkingLot.getAvailableTwoWheelerSlots() + 
-                        "/" + parkingLot.getTotalTwoWheelerSlots();
-        
-        Toast.makeText(this, details, Toast.LENGTH_LONG).show();
+        navigateToParkingLotDetails(parkingLot);
     }
     
     private void updateMapWithLocationSettings() {
@@ -421,6 +581,186 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
                 getCurrentLocation();
             }
         });
+    }
+    
+    private void setupFilterButton() {
+        // Set up filter floating action button
+        fabFilter.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showFilterDialog();
+            }
+        });
+    }
+    
+    private void showFilterDialog() {
+        FilterDialogFragment filterDialog = FilterDialogFragment.newInstance(currentFilterCriteria);
+        filterDialog.setFilterListener(new FilterDialogFragment.FilterListener() {
+            @Override
+            public void onFiltersApplied(FilterDialogFragment.FilterCriteria criteria) {
+                currentFilterCriteria = criteria;
+                applyFiltersToCurrentResults();
+                Toast.makeText(HomeActivity.this, "Filters applied", Toast.LENGTH_SHORT).show();
+            }
+        });
+        filterDialog.show(getSupportFragmentManager(), "FilterDialog");
+    }
+    
+    private void applyFiltersToCurrentResults() {
+        if (allParkingLots.isEmpty()) {
+            return;
+        }
+        
+        List<ParkingLot> filteredLots = filterParkingLots(allParkingLots, currentFilterCriteria);
+        displayParkingLotsOnMap(filteredLots);
+    }
+    
+    private List<ParkingLot> filterParkingLots(List<ParkingLot> parkingLots, FilterDialogFragment.FilterCriteria criteria) {
+        List<ParkingLot> filteredLots = new ArrayList<>();
+        
+        Log.d(TAG, "Filtering " + parkingLots.size() + " lots with criteria: maxDistance=" + criteria.maxDistance + ", maxPrice=" + criteria.maxPrice);
+        
+        for (ParkingLot lot : parkingLots) {
+            // Use hourly rate for filtering instead of parsing fee string
+            int lotPrice = (int) lot.getHourlyRate();
+            Log.d(TAG, "Checking lot: " + lot.getName() + ", distance=" + lot.getDistance() + ", price=" + lotPrice);
+            
+            // Apply distance filter
+            if (lot.getDistance() > criteria.maxDistance) {
+                Log.d(TAG, "Lot " + lot.getName() + " filtered out by distance: " + lot.getDistance() + " > " + criteria.maxDistance);
+                continue;
+            }
+            
+            // Apply price filter using hourly rate
+            if (lotPrice > criteria.maxPrice) {
+                Log.d(TAG, "Lot " + lot.getName() + " filtered out by price: " + lotPrice + " > " + criteria.maxPrice);
+                continue;
+            }
+            
+            // Apply availability filter
+            if (criteria.availableOnly) {
+                int totalAvailable = lot.getAvailableCarSlots() + lot.getAvailableTwoWheelerSlots();
+                if (totalAvailable == 0) {
+                    continue;
+                }
+            }
+            
+            // Apply vehicle type filters
+            if (criteria.carSlotsOnly && lot.getAvailableCarSlots() == 0) {
+                continue;
+            }
+            
+            if (criteria.twoWheelerSlotsOnly && lot.getAvailableTwoWheelerSlots() == 0) {
+                continue;
+            }
+            
+            filteredLots.add(lot);
+            Log.d(TAG, "Lot " + lot.getName() + " passed all filters");
+        }
+        
+        Log.d(TAG, "Filtering complete: " + filteredLots.size() + " lots passed filters");
+        return filteredLots;
+    }
+    
+
+    private void setupViewToggleButton() {
+        // Initially set to list view icon since we start with map view
+        fabToggleView.setImageResource(R.drawable.ic_list_view);
+        
+        fabToggleView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                toggleView();
+            }
+        });
+    }
+    
+    private void setupRecyclerView() {
+        LinearLayoutManager layoutManager = new LinearLayoutManager(this);
+        recyclerViewParkingLots.setLayoutManager(layoutManager);
+        
+        // Enable smooth scrolling and improve performance
+        recyclerViewParkingLots.setHasFixedSize(true);
+        recyclerViewParkingLots.setNestedScrollingEnabled(true);
+        
+        parkingLotListAdapter = new ParkingLotListAdapter(this, new ArrayList<>());
+        parkingLotListAdapter.setOnParkingLotClickListener(new ParkingLotListAdapter.OnParkingLotClickListener() {
+            @Override
+            public void onParkingLotClick(ParkingLot parkingLot) {
+                navigateToParkingLotDetails(parkingLot);
+            }
+        });
+        recyclerViewParkingLots.setAdapter(parkingLotListAdapter);
+    }
+    
+    private void toggleView() {
+        if (isListViewVisible) {
+            // Switch to map view
+            showMapView();
+        } else {
+            // Switch to list view
+            showListView();
+        }
+    }
+    
+    private void showMapView() {
+        // Hide RecyclerView, show map
+        recyclerViewParkingLots.setVisibility(View.GONE);
+        findViewById(R.id.mapFragment).setVisibility(View.VISIBLE);
+        
+        // Update FAB icon
+        fabToggleView.setImageResource(R.drawable.ic_list_view);
+        
+        isListViewVisible = false;
+        
+        // Optional: Add animation
+        recyclerViewParkingLots.animate()
+                .alpha(0f)
+                .setDuration(200)
+                .withEndAction(() -> recyclerViewParkingLots.setVisibility(View.GONE));
+    }
+    
+    private void showListView() {
+        // Show RecyclerView, hide map
+        findViewById(R.id.mapFragment).setVisibility(View.GONE);
+        recyclerViewParkingLots.setVisibility(View.VISIBLE);
+        
+        // Update FAB icon
+        fabToggleView.setImageResource(R.drawable.ic_map_view);
+        
+        isListViewVisible = true;
+        
+        // Update list with current parking lots
+        updateListView();
+        
+        // Optional: Add animation
+        recyclerViewParkingLots.setAlpha(0f);
+        recyclerViewParkingLots.animate()
+                .alpha(1f)
+                .setDuration(200);
+    }
+    
+    private void updateListView() {
+        if (parkingLotListAdapter != null) {
+            // Get currently displayed parking lots (filtered)
+            List<ParkingLot> currentLots = getCurrentlyDisplayedParkingLots();
+            parkingLotListAdapter.updateParkingLots(currentLots);
+        }
+    }
+    
+    private List<ParkingLot> getCurrentlyDisplayedParkingLots() {
+        // Return the filtered parking lots that are currently being displayed
+        if (allParkingLots.isEmpty()) {
+            return new ArrayList<>();
+        }
+        return filterParkingLots(allParkingLots, currentFilterCriteria);
+    }
+    
+    private void navigateToParkingLotDetails(ParkingLot parkingLot) {
+        Intent intent = new Intent(this, ParkingLotDetailsActivity.class);
+        intent.putExtra(ParkingLotDetailsActivity.EXTRA_PARKING_LOT, parkingLot);
+        
+        startActivity(intent);
     }
     
     private void checkLocationPermission() {
@@ -585,6 +925,26 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     }
 
+    private void testBackendConnectivity() {
+        parkingApiService.testConnectivity(new ParkingApiService.ConnectivityCallback() {
+            @Override
+            public void onSuccess(String workingUrl) {
+                runOnUiThread(() -> {
+                    Log.d(TAG, "✅ Backend connectivity successful: " + workingUrl);
+                    Toast.makeText(HomeActivity.this, "✅ Connected to backend server", Toast.LENGTH_SHORT).show();
+                });
+            }
+            
+            @Override
+            public void onError(String error) {
+                runOnUiThread(() -> {
+                    Log.e(TAG, "❌ Backend connectivity failed: " + error);
+                    Toast.makeText(HomeActivity.this, "⚠️ Backend connection issue - using offline data", Toast.LENGTH_LONG).show();
+                });
+            }
+        });
+    }
+
     // Method to test data loading (Remove this test method once data loading works correctly)
     private void testParkingDataLoading() {
         List<ParkingLot> allLots = ParkingDataLoader.loadParkingLotsFromAssets(this);
@@ -595,6 +955,59 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
             if (lot.getCity().equals("Noida")) {
                 Log.d(TAG, "Noida parking lot: " + lot.getName() + " at " + lot.getLatitude() + ", " + lot.getLongitude());
             }
+        }
+    }
+    
+    // Fallback method for simple markers without custom icons
+    private void createSimpleMarkers(List<ParkingLot> parkingLots) {
+        for (ParkingLot lot : parkingLots) {
+            LatLng position = new LatLng(lot.getLatitude(), lot.getLongitude());
+            
+            Marker marker = mMap.addMarker(new MarkerOptions()
+                .position(position)
+                .title(lot.getName())
+                .snippet(lot.getDisplayFee()));
+            
+            if (marker != null) {
+                marker.setTag(lot);
+                parkingMarkers.add(marker);
+            }
+        }
+    }
+    
+    // Add markers in batches to prevent UI blocking
+    private void addMarkersInBatches(List<MarkerData> markerDataList) {
+        final int BATCH_SIZE = 5;
+        final int BATCH_DELAY = 50; // milliseconds
+        
+        for (int i = 0; i < markerDataList.size(); i += BATCH_SIZE) {
+            final int startIndex = i;
+            final int endIndex = Math.min(i + BATCH_SIZE, markerDataList.size());
+            
+            // Delay each batch to prevent UI blocking
+            new android.os.Handler(Looper.getMainLooper()).postDelayed(() -> {
+                for (int j = startIndex; j < endIndex; j++) {
+                    MarkerData markerData = markerDataList.get(j);
+                    try {
+                        MarkerOptions options = new MarkerOptions()
+                            .position(markerData.position)
+                            .title(markerData.lot.getName())
+                            .snippet(markerData.lot.getDisplayFee());
+                        
+                        if (markerData.customIcon != null) {
+                            options.icon(markerData.customIcon);
+                        }
+                        
+                        Marker marker = mMap.addMarker(options);
+                        if (marker != null) {
+                            marker.setTag(markerData.lot);
+                            parkingMarkers.add(marker);
+                        }
+                    } catch (Exception e) {
+                        Log.e(TAG, "Failed to add marker: " + e.getMessage());
+                    }
+                }
+            }, (startIndex / BATCH_SIZE) * BATCH_DELAY);
         }
     }
 } 

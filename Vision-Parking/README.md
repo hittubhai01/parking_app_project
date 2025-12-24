@@ -1,9 +1,56 @@
-# Complete Guide to Setup Car Parking Android App (Linux & Windows)
+# VisionPark - Smart Parking Android App
+
+Complete guide to setup and run the VisionPark Android application on Linux (Ubuntu) and Windows.
+
+## Overview
+
+VisionPark is an Android mobile application that allows users to find and book parking spots in real-time. The app integrates with Google Maps for location services and connects to a Flask backend for parking management.
+
+## Tech Stack
+
+- **Language:** Java/Kotlin
+- **Build System:** Gradle with Kotlin DSL
+- **Min SDK:** 24 (Android 7.0)
+- **Target SDK:** 35 (Android 15)
+- **Maps:** Google Maps SDK for Android
+- **Location:** Google Play Services Location 21.0.1
+- **Places:** Google Places API
+- **HTTP Client:** Retrofit 2.9.0 with Gson converter
+- **Testing:** JUnit, Espresso, Appium
+
+## Documentation
+
+### 📚 Quick Links
+
+- **[Product Requirements Document (PRD)](./parking-app-prd.md)** - Complete product specifications and UI/UX guidelines
+- **[User App REST API Specs](../REST_API_Specs/USER_APP_REST_API_SPECS.md)** - API endpoints and request/response formats
+- **[Backend Setup Guide](../Backend/README.md)** - Backend installation and configuration
+- **[Switch to EC2 Guide](./README_SwitchToEC2Guide.md)** - Configure app for AWS EC2 backend
+- **[Test Plan & Setup](./README_Test_Plan_Setup.md)** - E2E testing with Appium
+- **[Test Report](./README_Test_Report.md)** - Test execution results and coverage
+
+## Quick Start
+
+### Prerequisites
+- Android Studio (latest version)
+- JDK 17 or higher
+- Android SDK (API 24-35)
+- Google Maps API key
+- Backend server running (see [Backend Setup](../Backend/README.md))
+
+### Setup Steps
+1. Clone the repository
+2. Open project in Android Studio
+3. Add Google Maps API key to `local.properties`:
+   ```
+   MAPS_API_KEY=your_api_key_here
+   ```
+4. Sync Gradle dependencies
+5. Run on emulator or device
 
 ## Getting Started
 
-This guide will walk you through the steps to set up Android Studio and run this project on your machine, covering both **Linux (Ubuntu)** and **Windows**.  
-**Additional guides for backend setups (local & AWS EC2) are linked where relevant.**
+This guide covers Android Studio setup, project configuration, and running the app on both **Linux (Ubuntu)** and **Windows**.
 
 ---
 
@@ -118,16 +165,16 @@ sudo apt install openjdk-17-jdk # Or a later version
 
 ### **Recommended AVD configuration for this project**
 - **Device profile:** Pixel 2 (or any 5.0" phone profile)
-- **System image / API level:** API 28 (Android 9.0 Pie) with **Google APIs**
+- **System image / API level:** API 30+ (Android 11+) with **Google APIs** (minSdk: 24, targetSdk: 35)
 - **ABI:** x86_64
 - **Screen resolution:** 1080 × 1920 (420 dpi)
 - **Services:** Google APIs (required for Maps/location)
-- **RAM & CPU cores:** 4 & max
+- **RAM & CPU cores:** 4GB RAM & max CPU cores
 - **Options:** Enable hardware accelerated virtualization (Intel HAXM or KVM on Linux)
 
 #### Why this configuration?
-- Uses Google Maps/services (Google APIs required).
-- API 28 is stable and compatible.
+- Uses Google Maps/Places services (Google APIs required).
+- API 30+ provides better compatibility with targetSdk 35.
 - x86_64 images run faster under virtualization.
 - Matches Pixel 2 layout for reliable UI testing.
 
@@ -261,9 +308,14 @@ Pick your device/emulator and click **Run**.
 
 - Create Google Cloud account: [https://console.cloud.google.com/](https://console.cloud.google.com/)
 - Create new project
-- Enable **Android Maps SDK**
-- Go to *Credentials* tab, copy API key
-- Paste API key in `local.properties` file
+- Enable the following APIs:
+  - **Maps SDK for Android**
+  - **Places API** (required for search functionality)
+- Go to *Credentials* tab, create and copy API key
+- Add API key to `local.properties` file:
+  ```
+  MAPS_API_KEY=your_api_key_here
+  ```
 
 ---
 
@@ -356,26 +408,22 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 
 ---
 
-## 7. API Endpoints & Structure Reference
+## 7. Backend Integration
 
-For all endpoints and request/response formats for User app REST APIs, see  
-**[User API Specs (REST_API_Specs)](../REST_API_Specs/USER_APP_REST_API_SPECS.md)**
+### 7.1 Backend Setup
 
+The backend application is fully containerized with Docker. For complete setup instructions, see:
+- **[Backend README](../Backend/README.md)** - Docker setup, database initialization, and API documentation
 
----
+### 7.2 API Integration
 
-## 8. Backend Integration and Setup
+For all API endpoints, request/response formats, and authentication details, see:
+- **[User App REST API Specs](../REST_API_Specs/USER_APP_REST_API_SPECS.md)** - Complete API documentation
 
-Current backend application is dockerized.  
-See **[Backend/Readme.md](../Backend/Readme.md)** for setup.
+### 7.3 Switching Between Local and EC2 Backend
 
-
-## 8.1 For Switching to EC2 Server or Local Server
-
-For switching between local backend and AWS EC2 server, refer to  
-**[SwitchToEC2Guide.md](../Vision-Parking/SwitchToEC2Guide.md)**
-
-
+To configure the app to connect to AWS EC2 server instead of localhost, refer to:
+- **[Switch to EC2 Guide](./README_SwitchToEC2Guide.md)** - Step-by-step backend switching guide
 
 ---
 
@@ -469,15 +517,107 @@ d. Run queries.
 **Now we have done with all the necessary steps. You can successfully run the Car Parking app in Android Studio across Linux or Windows, with backend and database setup (local or AWS EC2).**
 
 ---
-## 10.Test Plan – VisionPark App
-To test the VisionPark Android app with E2E Integration test cases using Appium+Pytest, refer to  
-**[plan.md](../plan.md)**
+## 10. Testing
 
-## 11. References
+### 10.1 Unit Tests
+Run unit tests using Android Studio or Gradle:
 
+**Linux/Mac:**
+```bash
+./gradlew test
+```
+
+**Windows:**
+```bash
+gradlew.bat test
+```
+
+### 10.2 Instrumented Tests
+Run instrumented tests on connected device/emulator:
+
+**Linux/Mac:**
+```bash
+./gradlew connectedAndroidTest
+```
+
+**Windows:**
+```bash
+gradlew.bat connectedAndroidTest
+```
+
+### 10.3 Build APK
+
+**Linux/Mac:**
+```bash
+./gradlew assembleDebug
+```
+
+**Windows:**
+```bash
+gradlew.bat assembleDebug
+```
+
+APK location: `app/build/outputs/apk/debug/app-debug.apk`
+
+### 10.4 E2E Testing with Appium
+
+For comprehensive E2E testing setup and execution:
+- **[Test Plan & Setup Guide](./README_Test_Plan_Setup.md)** - Appium setup, test scenarios, and execution
+- **[Test Report](./README_Test_Report.md)** - Test results and coverage
+
+Run E2E tests:
+```bash
+# Linux/Mac
+./run_e2e.sh
+
+# Windows
+pytest tests/ -v
+```
+
+## 11. Project Structure
+
+```
+Vision-Parking/
+├── app/
+│   ├── src/
+│   │   ├── main/
+│   │   │   ├── java/com/example/visionpark/
+│   │   │   │   ├── activities/          # Activity classes
+│   │   │   │   ├── adapters/            # RecyclerView adapters
+│   │   │   │   ├── models/              # Data models
+│   │   │   │   ├── network/             # API client (Retrofit)
+│   │   │   │   └── utils/               # Utility classes
+│   │   │   ├── res/                     # Resources (layouts, drawables, etc.)
+│   │   │   └── AndroidManifest.xml      # App manifest
+│   │   └── test/                        # Unit tests
+│   └── build.gradle.kts                 # App-level build config
+├── tests/                               # E2E tests (Appium)
+├── gradle/                              # Gradle wrapper
+├── build.gradle.kts                     # Project-level build config
+├── settings.gradle.kts                  # Project settings
+├── local.properties                     # API keys (not in git)
+├── parking-app-prd.md                   # Product requirements
+├── README.md                            # This file
+├── README_SwitchToEC2Guide.md           # EC2 backend guide
+├── README_Test_Plan_Setup.md            # Test setup guide
+└── README_Test_Report.md                # Test results
+
+```
+
+## 12. References
+
+### External Resources
 - **Android Studio:** [https://developer.android.com/studio](https://developer.android.com/studio)
 - **Git:** [https://git-scm.com/](https://git-scm.com/)
 - **PostgreSQL:** [https://www.postgresql.org/](https://www.postgresql.org/)
 - **pgAdmin:** [https://www.pgadmin.org/](https://www.pgadmin.org/)
 - **Google Cloud Console:** [https://console.cloud.google.com/](https://console.cloud.google.com/)
-- **Switch to EC2 Guide:** [SwitchToEC2Guide.md](../SwitchToEC2Guide.md)
+- **Google Maps SDK:** [https://developers.google.com/maps/documentation/android-sdk](https://developers.google.com/maps/documentation/android-sdk)
+- **Appium:** [https://appium.io/](https://appium.io/)
+
+### Project Documentation
+- **[Product Requirements (PRD)](./parking-app-prd.md)**
+- **[API Specifications](../REST_API_Specs/USER_APP_REST_API_SPECS.md)**
+- **[Backend Setup](../Backend/README.md)**
+- **[EC2 Configuration](./README_SwitchToEC2Guide.md)**
+- **[Testing Guide](./README_Test_Plan_Setup.md)**

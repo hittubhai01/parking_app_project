@@ -107,6 +107,43 @@ public class ParkingDataLoader {
             // Set additional fields
             parkingLot.setAddress(jsonObject.optString("address", ""));
             parkingLot.setLandmark(jsonObject.optString("landmark", ""));
+            parkingLot.setCity(jsonObject.optString("city", "Unknown"));
+            
+            // Set hourly rate for filtering (parse from car_fee if possible)
+            try {
+                if (carFee != null && !carFee.equals("Free")) {
+                    // Try to extract numeric value from fee string
+                    String numericPart = carFee.replaceAll("[^0-9.]", "");
+                    if (!numericPart.isEmpty()) {
+                        parkingLot.setHourlyRate(Double.parseDouble(numericPart));
+                    }
+                }
+            } catch (NumberFormatException e) {
+                parkingLot.setHourlyRate(0.0);
+            }
+            
+            // Add some variety to availability status for demonstration
+            // This simulates different availability levels
+            if (availableCarSlots == 0 && availableTwoWheelerSlots == 0) {
+                // If no slots available, mark as RED
+                parkingLot.setAvailabilityStatus("RED");
+            } else if (totalCarSlots > 0 || totalTwoWheelerSlots > 0) {
+                // If we have capacity data, let the model calculate the status
+                // Add some randomness for demonstration when using local data
+                int totalAvailable = availableCarSlots + availableTwoWheelerSlots;
+                int totalCapacity = totalCarSlots + totalTwoWheelerSlots;
+                
+                if (totalCapacity == 0) {
+                    // Generate some demo data
+                    int demoCapacity = 20 + (id % 30); // 20-50 slots
+                    int demoAvailable = (id % 3 == 0) ? 0 : // 33% RED
+                                       (id % 3 == 1) ? demoCapacity / 4 : // 33% YELLOW  
+                                       demoCapacity * 3 / 4; // 33% GREEN
+                    
+                    parkingLot.setTotalCarSlots(demoCapacity);
+                    parkingLot.setAvailableCarSlots(demoAvailable);
+                }
+            }
             
             return parkingLot;
             

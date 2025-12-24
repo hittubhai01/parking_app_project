@@ -172,499 +172,426 @@ Based on the application requirements, the following key features will be implem
 - Maintain consistency with the overall app design language
 
 ---
-
-### 4.4 Parking Lot Options
-
-![Parking Lot Options Design 1](shared\shared\assets\android_app_ui_designs\ParkingLotOptions.png)
-![Parking Lot Options Design 2](shared\shared\assets\android_app_ui_designs\ParkingLotOptions2.png)
-
-
-**Target Design Reference**: Use the above images as the design templates for the parking lot list screen implementation. Both variations show different approaches to displaying parking lot information.
-
-**Functionality**:
-
-#### Core Features:
-
-- **Search Results Display**: Show list of parking lots based on search location or current location
-- **Real-time Data**: Display live parking availability and pricing information
-- **Interactive List Items**: Each parking lot entry is clickable for detailed view
-- **Sorting & Filtering**: Options to sort by distance, price, or availability
-
-**Note: Activity flow should be that Parking Lot Cards should be available only after clicking on specific parking lot on Parking Lot Options screen**  
-
-#### Individual Parking Lot Card Elements:
-
-- **Parking Lot Name**: Clear, prominent display of facility name
-- **Address/Location**: Full address with street name and area
-- **Distance Indicator**:
-  - Show distance from current location (e.g., "0.5 km away")
-  - Walking/driving time estimate
-- **Availability Status**:
-  - Color-coded availability badges:
-    - Green: Available spots (>5 spots)
-    - Yellow: Limited availability (1-5 spots)
-    - Red: Full/No availability (0 spots)
-  - Numerical display: "15/50 spots available"
-- **Pricing Information**:
-  - Hourly rate display (e.g., "₹20/hour")
-  - Special rates if applicable (e.g., "₹100/day")
-- **Rating & Reviews**:
-  - Star rating display (1-5 stars)
-  - Number of reviews (e.g., "4.2 ★ (128 reviews)")
-- **Operating Hours**: Current status (Open/Closed) and hours
-- **Quick Action Buttons**:
-  - "Book Now" button for immediate reservation
-  - "Navigate" button for directions
-  - "Call" button for contact (if available)
-
-#### Advanced Features:
-
-- **Favorites**: Heart icon to save frequently used parking lots
-- **Recent Searches**: Quick access to previously viewed lots
-- **Filter Options**:
-  - Price range slider
-  - Distance radius
-  - Availability status
-  - Facility type (covered, open, multi-level)
-  - Special features (EV charging, security, etc.)
-- **Sort Options**:
-  - Distance (nearest first)
-  - Price (lowest first)
-  - Availability (most available first)
-  - Rating (highest first)
-- **Map Toggle**: Switch between list view and map view
-- **Refresh Functionality**: Pull-to-refresh for updated availability
-
-#### User Interactions:
-
-- **Tap on Card**: Navigate to Parking Lot Details screen
-- **Swipe Actions**:
-  - Swipe right: Add to favorites
-  - Swipe left: Get directions
-- **Long Press**: Show quick action menu
-- **Search Bar**: Filter results by name or location
-- **Location Services**: "Use Current Location" for nearby results
-
-#### Loading & Error States:
-
-- **Loading State**: Skeleton screens while fetching data
-- **Empty State**: Message when no parking lots found
-- **Error State**: Retry option when data fails to load
-- **Offline Mode**: Show cached results with offline indicator
-
-#### Accessibility Features:
-
-- **Screen Reader Support**: Proper content descriptions
-- **High Contrast Mode**: Enhanced visibility options
-- **Large Text Support**: Scalable font sizes
-- **Voice Navigation**: Voice commands for hands-free operation
-
-**Design Elements**:
-
-#### Visual Design Implementation:
-
-- **Card-based Layout**: Each parking lot as a distinct card with rounded corners
-- **Color Scheme**:
-  - Primary colors matching app theme
-  - Status colors: Green (#4CAF50), Yellow (#FFC107), Red (#F44336)
-- **Typography**:
-  - Parking lot name: Bold, 16sp
-  - Address: Regular, 14sp, secondary color
-  - Distance/Price: Medium, 12sp
-- **Icons**:
-  - Location pin for distance
-  - Clock for operating hours
-  - Star for ratings
-  - Rupee symbol for pricing
-- **Spacing**: Consistent 16dp margins and 8dp padding
-- **Elevation**: Subtle shadow for card depth (2dp)
-
-#### Responsive Design:
-
-- **Phone Portrait**: Single column list
-- **Phone Landscape**: Optimized horizontal layout
-- **Tablet**: Two-column grid layout
-- **Different Screen Densities**: Scalable assets and dimensions
-
-#### Animation & Transitions:
-
-- **Card Animations**: Subtle scale animation on tap
-- **Loading Animations**: Smooth skeleton loading
-- **Refresh Animation**: Pull-to-refresh indicator
-- **Filter Transitions**: Smooth expand/collapse for filter options
-
-#### Performance Optimization:
-
-- **Lazy Loading**: Load parking lots as user scrolls
-- **Image Caching**: Cache parking lot images for faster loading
-- **Data Pagination**: Load results in batches of 20-30 items
-- **Background Updates**: Refresh availability data every 30 seconds
+# Parking Flow – Product Requirements Document (PRD)
 
 ---
 
-### 4.5 Parking Lot Details (Explore Parking Details)
+## 4.4 Parking Lot Options (Map View & List Screen)
+![Parking Lot Options Screen](shared/shared/assets/android_app_ui_designs/ParkingLotOptions.png)
 
-![Parking Lot Details Design](shared\shared\assets\android_app_ui_designs\ParkingLotDetails.png)
-
-**Target Design Reference**: Use the above image as the design template for the parking lot details screen implementation.
-
-**CRITICAL**: This screen must strictly follow the visual design shown in ParkingLotDetails.png. All layout, colors, spacing, and component positioning should match the target design exactly.
-
-**Functionality**:
-
-#### Screen Structure (Top to Bottom):
-
-##### 1. Header Section:
-
-- **Status Bar**: Standard Android status bar with time, battery, signal
-- **Navigation Bar**:
-  - Back arrow (←) on left side
-  - Screen title "Parking Details" centered
-  - Share icon on right side
-- **Background**: White background for header
-
-##### 2. Parking Lot Image Section:
-
-- **Hero Image**: Large parking lot photo taking full width
-- **Image Overlay Elements**:
-  - Favorite heart icon (top-right corner of image)
-  - Image indicators/dots if multiple images available
-- **Image Height**: Approximately 1/3 of screen height
-
-##### 3. Parking Lot Information Card:
-
-- **Parking Lot Name**: Large, bold text (e.g., "Central Mall Parking")
-- **Location Details**:
-  - Full address with location pin icon
-  - Distance from current location (e.g., "2.5 km away")
-- **Operating Status**:
-  - Current status indicator (Open/Closed)
-  - Operating hours display
-
-##### 4. Availability & Pricing Section:
-
-- **Availability Display**:
-  - Large numerical display of available spots (e.g., "45/100 Available")
-  - Color-coded availability indicator
-  - Real-time status badge
-- **Pricing Information**:
-  - Hourly rate prominently displayed
-  - Additional pricing tiers if applicable
-  - Special offers or discounts
-
-##### 5. Amenities & Features Grid:
-
-- **Icon Grid Layout**: 3-4 columns of amenity icons
-- **Feature Icons**:
-  - Security camera icon
-  - Covered parking icon
-  - EV charging icon
-  - Wheelchair accessibility icon
-  - 24/7 access icon
-  - Payment methods accepted
-- **Icon Style**: Consistent icon design with labels
-
-##### 6. Reviews & Rating Section:
-
-- **Overall Rating**: Star rating with numerical score
-- **Rating Summary**: Brief statistics
-- **Recent Reviews**: 2-3 most recent user reviews with:
-  - User name/initial
-  - Star rating
-  - Review text (truncated)
-  - Time stamp
-
-##### 7. Location & Map Section:
-
-- **Mini Map**: Embedded map showing parking location
-- **Navigation Button**: "Get Directions" button
-- **Nearby Landmarks**: List of nearby points of interest
-
-##### 8. Action Buttons (Bottom):
-
-- **Primary Action Button**:
-  - "Park Now" button (full width, prominent)
-  - Color: Primary app color (green)
-
-#### Design Specifications:
-
-##### Color Scheme:
-
-- **Primary Colors**: Follow app's main color palette
-- **Status Colors**:
-  - Green (#4CAF50) for available/open
-  - Yellow (#FFC107) for limited availability
-  - Red (#F44336) for full/closed
-- **Background**: White (#FFFFFF)
-- **Text Colors**:
-  - Primary text: Dark gray/black
-  - Secondary text: Medium gray
-  - Accent text: App primary color
-
-##### Typography:
-
-- **Parking Lot Name**: Bold, 24sp
-- **Section Headers**: Medium, 18sp
-- **Body Text**: Regular, 16sp
-- **Caption Text**: Regular, 14sp
-- **Button Text**: Medium, 16sp
-
-##### Spacing & Layout:
-
-- **Screen Margins**: 16dp left/right margins
-- **Card Padding**: 16dp internal padding
-- **Section Spacing**: 12dp between sections
-- **Element Spacing**: 8dp between related elements
-
-##### Interactive Elements:
-
-- **Buttons**: Material Design elevated buttons with appropriate shadows
-- **Cards**: Subtle elevation (2dp) with rounded corners (8dp radius)
-- **Touch Targets**: Minimum 48dp touch target size
-- **Ripple Effects**: Material Design ripple animations on touch
-
-#### Implementation Requirements:
-
-##### Data Integration:
-
-- **Real-time Updates**: Availability data refreshes every 30 seconds
-- **API Endpoints**: Connect to parking availability and details APIs
-- **Caching**: Cache static information (images, amenities, reviews)
-- **Error Handling**: Graceful handling of network failures
-
-##### User Interactions:
-
-- **Image Gallery**: Swipe through multiple parking lot images
-- **Expandable Sections**: Tap to expand/collapse detailed information
-- **Map Integration**: Tap map to open full-screen map view
-- **Share Functionality**: Share parking lot details via system share sheet
-
-##### Accessibility:
-
-- **Screen Reader Support**: Proper content descriptions for all elements
-- **High Contrast**: Support for high contrast mode
-- **Large Text**: Support for system font scaling
-- **Touch Accessibility**: Adequate touch target sizes
-
-##### Performance:
-
-- **Image Loading**: Progressive loading with placeholder images
-- **Smooth Scrolling**: Optimized scroll performance
-- **Memory Management**: Efficient image and data caching
-- **Battery Optimization**: Minimize background updates when not visible
-
-#### Technical Implementation Notes:
-
-##### Android Components:
-
-- **Activity/Fragment**: Use Fragment for better navigation integration
-- **RecyclerView**: For amenities grid and reviews list
-- **ViewPager2**: For image gallery if multiple images
-- **MapFragment**: For embedded map display
-- **Material Components**: Use Material Design components throughout
-
-##### Layout Structure:
-
-- **ScrollView**: Main container for scrollable content
-- **ConstraintLayout**: For complex positioning and responsive design
-- **CardView**: For information cards with elevation
-- **LinearLayout**: For simple vertical/horizontal arrangements
-
-This implementation should result in a pixel-perfect match to the target design while providing all the functional requirements for a comprehensive parking lot details screen.
+**Target Design Reference:**  
+Use *ParkingLotOptions.png* as the design template for this screen.  
+This serves as the **entry point** for users to discover nearby parking lots via a **map-based interface** and transition into detailed lot views.
 
 ---
 
-### 4.6 My Sessions (Active & Past)
+### Functionality Overview
 
-![My Sessions Design 1](shared\shared\assets\android_app_ui_designs\MySessions.png)
-![My Sessions Design 2](shared\shared\assets\android_app_ui_designs\MySessions2.png)
+The **Parking Lot Options** screen allows users to search for available parking lots, explore real-time availability and pricing, and navigate to the **Parking Lot Details** screen by tapping any parking pin.  
+This view combines **map interactivity** with **dynamic data updates** for seamless exploration.
 
-**Target Design Reference**: Use the provided images as the design templates for the My Sessions screen implementation showing both "Active" and "Past" tabs with session cards.
+---
 
-**CRITICAL**: This screen must strictly follow the visual design shown in the target images. All layout, colors, spacing, and component positioning should match the target design exactly.
+### Core Features
 
-**Functionality**:
+#### 1. Map-Based Display
+- Primary layout: full-screen **Google Map view**.
+- Each pin represents a parking lot and displays:
+  - **Lot name** (on selection or hover)
+  - **Availability status (color-coded)**  
+- **Pin Colors (Status Indicator):**
+  - 🟢 **Green:** Available (>5 spots)
+  - 🟡 **Yellow:** Limited (1–5 spots)
+  - 🔴 **Red:** Full (0 spots)
 
-#### Screen Structure (Based on Target Design):
+#### 2. Real-Time Data Integration
+- Live API updates every **30 seconds** for:
+  - Availability  
+  - Operational status  
+- Smooth UI refresh with **skeleton placeholders** during updates.
 
-##### 1. Header Section:
+#### 3. Search and Filter
+- **Search Bar** integrated below the top app bar:
+  - Allows search by parking lot name, area, or landmark.
+  - Left icon: location marker.  
+  - Right icon: clear text button.
+- **Floating Action Buttons (right-side vertical stack):**
+  - 📍 **Use Current Location** – recenters map on user’s position.
+  - 🧭 **Filter** – opens modal/drawer with:
+    - Price range slider  
+    - Distance radius (1–10 km)  
+    - Availability (Available / Limited / Full)  
+    - Facility type (Covered / Open / Multi-level)  
+    - Amenities (EV charging, Security, 24/7 access)
+  - 🗂️ **List View Toggle** – switches between **Map View** and **List View**.
 
-- **Navigation Bar**:
-  - Back arrow (←) on left side
-  - Screen title "My Sessions" centered (bold, dark text)
-  - Clean white background
+#### 4. List View Mode
+- Each parking lot appears as a **card** showing:
+  - Lot name  
+  - Address  
+  - Availability badge  
+  - Star rating  
+- Tapping a card opens the **Parking Lot Details** screen.
 
-##### 2. Tab Navigation:
+---
 
-- **Tab Bar**:
-  - Two tabs: "Active" and "Past"
-  - Active tab has green underline indicator
-  - Inactive tab appears in gray
-  - Clean, minimal tab design
-  - Full-width tab bar below header
+### User Interactions
 
-##### 3. Active Tab Content:
+| User Action | System Response |
+|--------------|-----------------|
+| Tap on parking pin | Opens **Parking Lot Details** |
+| Tap “Use Current Location” | Re-centers map to current position |
+| Apply filters/sort | Updates visible parking pins |
+| Pull-to-refresh | Refreshes map and lot data |
+| Toggle Map/List | Switches between map and list mode |
 
-###### Active Session Card:
+---
 
-- **Location Information**:
+### Design Specifications
 
-  - **Parking Lot Name**: "Stuttgart, Stephangarage" (bold, dark text)
-  - **Address**: "kronenstraße" (gray, smaller text)
-  - **Chevron Icon**: Right arrow (>) indicating expandable/clickable
+#### Color Scheme
+- **Primary Color:** App green (#4CAF50)
+- **Status Colors:**  
+  - Green (#4CAF50) — Available  
+  - Yellow (#FFC107) — Limited  
+  - Red (#F44336) — Full  
+- **Map Background:** Standard Google Maps neutral tone  
+- **Card Background:** White (#FFFFFF)
 
-- **Session Details**:
+#### Typography
+- Lot name: Bold, 16sp  
+- Address: Regular, 14sp (gray)  
+- Distance & availability: Medium, 12sp  
+- Button text: Medium, 14sp (white)
 
-  - **Session ID**: "ID: #11235532232" (gray text)
-  - **Current Duration**: Clock icon + "47 mins, 2010 - 16.00 hrs" (with dot indicator)
-  - **Total Duration**: "47 mins Total" (larger text)
+#### Layout & Spacing
+- Map: Full-screen with floating components (FABs on right)  
+- Search bar: Rounded, below app header  
+- Margins: 16dp outer padding  
+- Buttons: Circular FABs (elevation 2dp)
 
-- **Action Button**:
-  - **"Exit Vehicle" Button**:
-    - Green background (#4CAF50)
-    - White text
-    - Rounded corners
-    - Right-aligned
-    - Medium size button
+#### Icons
+- Location pin: GPS recenter  
+- Filter: Filter modal  
+- List: Toggle list view  
+- Star: Ratings  
 
-##### 4. Past Tab Content:
+---
 
-###### Past Session Cards (Multiple):
+### Navigation Flow
+1. User opens **Parking Lot Options** (default home view).  
+2. Taps on a **parking pin** to view lot details.  
+3. System navigates to **Parking Lot Details** (*Section 4.5*).  
+4. From there, the user taps **“Park Vehicle”** → goes to **Vehicle List Activity** (*Section 4.5.1*).
 
-- **Card Structure** (repeated for each past session):
+---
 
-  - **Location Information**:
+> **Note:**  
+> The current design includes the search bar, filters, and view toggle as floating actions. Price tags on map pins and mini info cards have been removed in this version.
 
-    - **Parking Lot Name**: "Stuttgart, Am Schlossplatz" (bold, dark text)
-    - **Address**: "Stauffenbergstrasse" (gray, smaller text)
-    - **Chevron Icon**: Right arrow (>) for details
-    - **Menu Icon**: Three dots (⋮) on right for options
+---
 
-  - **Session Details**:
-    - **Session ID**: "ID: #11235532232" (gray text)
-    - **Date/Time Entries**:
-      - Bullet points (•) with dates and times
-      - "13th Feb, 2018 - 16.00 hrs"
-      - "13th Feb, 2018 - 18.40 hrs"
-    - **Duration**: Clock icon + total duration (e.g., "2 hrs 40 mins")
-    - **Payment Info**:
-      - "Total: €5" (left side)
-      - "Payment Successful" with checkmark icon (right side, green)
+## 4.5 Parking Lot Details (Explore Parking Details)
+![Parking Lot Details Screen](shared/shared/assets/android_app_ui_designs/ParkingLot(new1).png)
 
-##### 5. Card Layout & Spacing:
+**Target Design Reference:**  
+Use *ParkingLot(new1).png* as the design reference.  
+This screen displays complete details for the selected parking lot and allows the user to begin a parking session.
 
-- **Card Design**:
+---
 
-  - White background cards
-  - Subtle shadow/elevation (2dp)
-  - Rounded corners (8dp)
-  - 16dp margin between cards
-  - 16dp internal padding
+### Functionality Overview
 
-- **Divider Lines**:
-  - Thin gray lines separating cards
-  - Full-width horizontal dividers
+The **Parking Lot Details** screen provides comprehensive information about the selected parking area — including operating hours, pricing tiers, and total capacity.  
+It acts as a **decision point** where users can confirm and start a parking session.
 
-#### Design Specifications:
+---
 
-##### Color Scheme:
+### Screen Structure
 
-- **Background**: Light gray/white (#F5F5F5)
-- **Card Background**: Pure white (#FFFFFF)
-- **Primary Text**: Dark gray/black (#212121)
-- **Secondary Text**: Medium gray (#757575)
-- **Active Tab Indicator**: Green (#4CAF50)
-- **Exit Vehicle Button**: Green background (#4CAF50)
-- **Success Indicator**: Green (#4CAF50)
+#### 1. Header
+- **Back Arrow (←)** — returns to the **Parking Lot Options** screen.  
+- Minimal header design; no explicit title or share/favorite icons.  
+- White background with subtle divider shadow.
 
-##### Typography:
+#### 2. Parking Preview Image
+- Static banner image showing the parking area or vehicles (hero section).  
+- Serves as a visual identifier for the selected lot.  
+- Appears at the top of the screen.
 
-- **Screen Title**: Bold, 20sp, dark
-- **Tab Labels**: Medium, 16sp
-- **Location Names**: Bold, 16sp, dark
-- **Addresses**: Regular, 14sp, gray
-- **Session Details**: Regular, 14sp, gray
-- **Duration**: Regular, 14sp, dark
-- **Button Text**: Medium, 14sp, white
-- **Payment Status**: Regular, 14sp, green
+#### 3. Parking Information Card
+- **Lot Name:** Prominent title text (e.g., *Stephcngarage*)  
+- **Address:** Displayed below the name (e.g., *Kronenstrape*)  
+- **Section Divider:** Thin line separating general info from details.  
+- **Operating Hours Section:**  
+  - Label: *Operating Hours*  
+  - Text: *Mon–Sun – 24 Hours*  
+  - Small icon beside heading (table/calendar style visual indicator).  
 
-##### Layout & Spacing:
+#### 4. Pricing Details
+- **Section Header:** *Price* (with a small table/list icon).  
+- Textual pricing breakdown:  
+  - Short-term parker: First hour €3.00  
+  - Each additional hour: €3.00  
+  - Daily max: €14.00  
+  - Last ticket: €28.00  
+  - Evening rate (20:30–06:00): max €6.00  
+- Simple list-style layout (no cards or icons).  
 
-- **Screen Margins**: 16dp left/right
-- **Card Margins**: 16dp between cards
-- **Card Padding**: 16dp internal padding
-- **Tab Height**: 48dp
-- **Element Spacing**: 8dp between related elements
-- **Section Spacing**: 12dp between different sections
+#### 5. Capacity Section
+- Displays total parking spots (e.g., *318 Total Parking Spaces*).  
+- Small car icon displayed beside capacity text.  
+- Positioned directly below pricing section.
 
-##### Icons:
+#### 6. Primary Action
+- **“Park Vehicle”** button at the bottom of the screen.  
+  - Full-width, high-contrast green (#4CAF50)  
+  - White text, medium weight  
+  - Rounded corners (8dp)  
+  - On tap → navigates to **Vehicle List Activity** (*Section 4.5.1*).
 
-- **Navigation**: Back arrow (24dp)
-- **Expandable**: Chevron right (20dp)
-- **Menu**: Three dots vertical (20dp)
-- **Time**: Clock icon (16dp)
-- **Success**: Checkmark in circle (16dp)
-- **Bullet Points**: Small filled circles (8dp)
+---
 
-#### Implementation Requirements:
+### User Interactions
 
-##### Core Features:
+| User Action | System Response |
+|--------------|-----------------|
+| Tap Back | Returns to Parking Lot Options |
+| Pull-to-refresh | Updates parking lot details |
+| Tap “Park Vehicle” | Opens Vehicle List Activity |
 
-- **Tab Navigation**:
-  - ViewPager2 with TabLayout
-  - Smooth tab switching
-  - Active tab indicator animation
-- **Real-time Updates**:
-  - Live duration counter for active sessions
-  - Auto-refresh session data
-- **Session Management**:
-  - Exit vehicle functionality
-  - Session details expansion
-  - Payment status tracking
+---
 
-##### Data Integration:
+### Design Specifications
 
-- **Active Sessions API**:
-  - Fetch current active sessions
-  - Real-time duration updates
-  - Session status monitoring
-- **Past Sessions API**:
-  - Fetch historical sessions
-  - Pagination for large lists
-  - Session details and receipts
-- **Payment Integration**:
-  - Payment status verification
-  - Transaction history
+#### Color Scheme
+- **Primary:** Green (#4CAF50)  
+- **Background:** White (#FFFFFF)  
+- **Text Colors:**  
+  - Primary text: Black (#212121)  
+  - Secondary: Gray (#757575)
 
-##### User Interactions:
+#### Typography
+- Lot name: Bold, 24sp  
+- Section headers: Medium, 18sp  
+- Body text: Regular, 16sp  
+- Sub-labels: Regular, 14sp  
+- Buttons: Medium, 16sp (white text)
 
-- **Tab Switching**: Smooth transition between Active/Past
-- **Card Expansion**: Tap to view session details
-- **Exit Vehicle**: Process checkout flow
-- **Menu Actions**: Options for past sessions (receipt, support, etc.)
-- **Pull-to-Refresh**: Update session data
+#### Layout & Spacing
+- Screen margins: 16dp  
+- Section spacing: 12dp  
+- Card padding: 16dp  
+- Components arranged in a vertical scroll layout (ScrollView)  
+- Consistent divider lines between sections  
 
-##### Technical Implementation:
+#### Icons
+- Clock/Calendar: Operating hours section  
+- Table/List icon: Pricing section  
+- Car icon: Capacity indicator  
 
-- **Fragment Structure**:
-  - Main Fragment with ViewPager2
-  - ActiveSessionsFragment
-  - PastSessionsFragment
-- **RecyclerView**: For session lists with proper adapters
-- **Timer Service**: Background service for active session duration
-- **Local Caching**: Store session data for offline viewing
+---
 
-#### User Flow:
+### Navigation Flow
+1. User taps a parking pin on **Parking Lot Options**.  
+2. Navigates to **Parking Lot Details** (lot info displayed).  
+3. Taps **“Park Vehicle”** → opens **Vehicle List Activity** (*Section 4.5.1*).
 
-1. **Access My Sessions**: Navigate from bottom navigation or home
-2. **View Active Tab**: See current active sessions (default tab)
-3. **Monitor Active Session**: Real-time duration and status updates
-4. **Exit Vehicle**: Tap button to initiate checkout process
-5. **Switch to Past Tab**: View historical parking sessions
-6. **View Past Details**: Tap on past sessions for detailed information
-7. **Access Receipts**: View payment confirmations and receipts
+---
 
-This implementation creates a comprehensive tabbed My Sessions screen that clearly separates active and past sessions, matching the target designs exactly while providing intuitive navigation and complete session management functionality.
+> **Note:**  
+> This version removes “Share”, “Favorite (Heart)”, “Amenities Grid”, and “Reviews” sections.  
+> Currency updated to **€**, and the layout simplified to match the current build’s text-based presentation.
+
+---
+
+## 4.5.1 Vehicle List Activity (Select or Add Vehicle)
+![Home Screen Design 2](shared\shared\assets\android_app_ui_designs\VehicleListScreen(new).png)
+**Target Design Reference:**  
+Use *VehicleListScreen(new).png* as the design template.  
+This screen serves as the **vehicle selection gateway** before initiating a parking session.
+
+---
+
+### Functionality Overview
+
+After tapping **“Park Vehicle”** on the **Parking Lot Details** screen, the user is directed to the **Vehicle List Activity**.  
+Here, they can **select an existing vehicle** from their list or **add a new one** before confirming and starting a session.
+
+---
+
+### Screen Structure
+
+#### 1. Header
+- Back arrow (←) — returns to **Parking Lot Details** screen.  
+- Title: **“My Vehicles”** centered.  
+- White background with subtle bottom shadow.
+
+#### 2. Vehicle List
+- Displays user’s registered vehicles as individual **cards**.  
+- Each vehicle card includes:
+  - **Vehicle Name/Label** (e.g., “Primary Sedan”)  
+  - **Registration Number** (e.g., “MH 12 AB 3456”)  
+  - **Make & Model, Year** (e.g., “Honda City, 2020”)  
+  - Vehicle icon on left.  
+- Tapping a card **selects the vehicle** and proceeds to **start a parking session** (navigates to **My Sessions** screen).
+
+#### 3. Add New Vehicle
+- **Add New Vehicle** button (full-width, at bottom).  
+  - Color: Green (#4CAF50)  
+  - Rounded corners (8dp radius)  
+  - On tap:
+    - Opens **Add Vehicle Form** modal or screen.  
+    - After successful addition, returns to updated vehicle list.
+
+---
+
+### User Interactions
+
+| User Action | System Response |
+|--------------|-----------------|
+| Tap on “Park Vehicle” in Parking Lot Details | Navigates to Vehicle List Activity |
+| Tap on an existing vehicle card | Starts a parking session for that vehicle and navigates to **My Sessions** screen |
+| Tap “Add New Vehicle” | Opens Add Vehicle Form |
+| Tap Back | Returns to Parking Lot Details |
+
+---
+
+### Design Specifications
+
+#### Color Scheme
+- **Primary:** Green (#4CAF50)  
+- **Background:** White (#FFFFFF)  
+- **Card Text Colors:**  
+  - Primary: Black (#212121)  
+  - Secondary: Gray (#757575)
+
+#### Typography
+- Screen Title: Bold, 20sp  
+- Vehicle Name: Bold, 16sp  
+- Vehicle Number & Details: Regular, 14sp  
+- Button Text: Medium, 14sp (white)
+
+#### Layout & Spacing
+- Outer padding: 16dp  
+- Card padding: 16dp  
+- Element spacing: 8dp  
+- Rounded corners: 12dp for cards  
+- Card elevation: 2dp  
+
+#### Icons
+- Car icon for vehicle cards  
+- Plus (+) icon for Add Vehicle button  
+
+---
+
+### Navigation Flow
+1. User taps **“Park Vehicle”** on Parking Lot Details.  
+2. Navigates to **Vehicle List Activity**.  
+3. Selects an existing vehicle → system creates session.  
+4. Redirects to **My Sessions (Section 4.6)** showing active session details.  
+5. Alternatively, user can add a new vehicle before proceeding.
+
+---
+## 4.6 My Sessions (Unified Session Screen)
+![My Sessions Design](shared/shared/assets/android_app_ui_designs/MySessions(new).png)
+
+**Target Design Reference:**  
+Use *MySessions(new).png* as the design template.  
+This screen displays **all ongoing and recent parking sessions** in a single, scrollable list — replacing the previous Active/Past tab structure.
+
+---
+
+### Functionality Overview
+
+The **My Sessions** screen provides a consolidated summary of all current and recently completed parking sessions.  
+Each active session appears as an individual **card**, showing its key details such as location, time, and payment progress.
+
+Users can:
+1. View multiple concurrent sessions at once.  
+2. End a specific session using the **“Exit Vehicle”** button.  
+3. Access this screen:
+   - Automatically after starting a session (from *Vehicle List Activity*), or  
+   - Manually via the **My Sessions** tab in bottom navigation.
+
+---
+
+### Screen Structure
+
+#### 1. Header
+- Title: **“My Sessions”** centered.  
+- (Optional) Back arrow if navigated from another screen.  
+- White background with subtle divider shadow.
+
+#### 2. Session Card (Repeating Component)
+Each active or recent session is represented as a card containing:
+
+- **Parking Lot Information:**
+  - Lot Name: Bold (e.g., *Stuttgart, Stephangarage*)  
+  - Address: Smaller gray text  
+  - Optional chevron (>) for expandable details
+
+- **Session Details:**
+  - Optional **Session ID** (e.g., `#11235532233`)  
+  - **Elapsed Time:** e.g., “47 mins”  
+  - **Start/End Time:** e.g., “2010 – 16.00 hrs”  
+  - **Charges:** e.g., “Amount: ₹40” or “₹40 so far” (dynamic or static depending on state)
+
+- **Action Button:**
+  - **“Exit Vehicle”**
+    - Right-aligned inside card  
+    - Color: Green (#4CAF50), White text  
+    - Rounded corners (8dp)  
+    - Ends session and processes payment
+
+---
+
+### Design Specifications
+
+- **Background:** Light gray (#F5F5F5)  
+- **Card Background:** White (#FFFFFF)  
+- **Primary Color:** Green (#4CAF50)  
+- **Typography:**
+  - Title: 20sp bold  
+  - Lot Name: 16sp bold  
+  - Address & Details: 14sp regular  
+  - Button Text: 14sp medium (white)
+- **Spacing:**  
+  - Card padding: 16dp  
+  - Card margin: 8–12dp  
+  - Elevation: 2dp  
+
+---
+
+### User Interactions
+
+| User Action | System Response |
+|--------------|-----------------|
+| Tap “Exit Vehicle” | Ends only that specific session and finalizes payment |
+| Pull-to-refresh | Updates all active sessions |
+| Tap card | Expands for more session details |
+| Tap “My Sessions” in nav bar | Opens this multi-session view |
+
+---
+
+### Technical Implementation
+
+- **Fragment:** `MySessionsFragment`  
+- **RecyclerView:** Displays multiple session cards  
+- **Live Timer Service:** Updates durations every minute  
+- **API Integration:**  
+  - Create, end, and retrieve all sessions  
+- **Caching:** Stores last known sessions for offline access  
+- **Performance:** Auto-refresh every 30 seconds
+
+---
+
+### Navigation Flow Summary
+
+1. User starts parking → navigates to **My Sessions**.  
+2. Each session appears as a separate card.  
+3. “Exit Vehicle” ends that session individually.  
+4. Multiple sessions can remain active concurrently.  
 
 ---
 
@@ -751,20 +678,18 @@ graph TD
     D -- If user is not registered --> E[Registration Screen]
     E --> C
     C --> F[Search Parking Location]
-    C --> O[My Sessions - Active/Past]
+    C --> O[My Sessions]
     C --> N[Profile/Settings]
     F --> G[Parking Lot Options]
     G --> H[Parking Lot Details]
-    H --> I[Park Vehicle - Check In]
-    I --> J[Active Session Created]
+    H --> I[Select Park Vehicle from List]
+    I --> J[Session Created]
     J --> O
     O --> M[Exit Vehicle - Check Out]
     M --> Q[Payment Processing]
-    Q --> R[Session Complete - Past Sessions]
+    Q --> R[Session Complete]
     
-    style I fill:#4CAF50,stroke:#2E7D32,color:#fff
-    style H fill:#E8F5E8,stroke:#4CAF50
-    style O fill:#E3F2FD,stroke:#1976D2
+    
 ```
 
 ### 5.2 PRIMARY USE CASE: Park Vehicle Check-In Flow
@@ -775,20 +700,17 @@ graph TD
 graph TD
     A[Home Screen<br/>Map with Parking Pins] --> B[Search Location<br/>or Use Current Location]
     B --> C[View Parking Pins<br/>3km Range Display]
-    C --> D[Select Specific Parking<br/>from Map or List]
-    D --> E{Navigation Needed?}
-    E -- Yes --> F[Google Maps Integration<br/>Get Directions]
-    E -- No --> G[Parking Lot Details Screen]
-    F --> G
+    C --> D[Select Specific Parking<br/>from Map by clicking pin]
+    D --> G[Parking Lot Details Screen]
+    
     G --> H[Review Parking Information<br/>Rates, Hours, Capacity]
     H --> I[**PARK VEHICLE BUTTON**<br/>Primary Action]
-    I --> J[Check-In Confirmation<br/>Session Start]
-    J --> K[Active Session Created<br/>Navigate to My Sessions]
-    K --> L[Real-time Session Monitoring<br/>Duration & Charges]
+    I --> J[VEHICLE LIST SCREEN<br/>Select Vehicle form List]
+    J --> K[Check-In Confirmation<br/>Session Start]
+    K --> L[Active Session Created<br/>Navigate to My Sessions]
+    L --> M[Real-time Session Monitoring<br/>Duration & Charges]
     
-    style I fill:#4CAF50,stroke:#2E7D32,color:#fff,stroke-width:3px
-    style G fill:#E8F5E8,stroke:#4CAF50
-    style K fill:#E3F2FD,stroke:#1976D2
+    
 ```
 
 ### 5.3 SECONDARY USE CASE: Exit Vehicle Check-Out Flow
@@ -797,15 +719,14 @@ graph TD
 
 ```mermaid
 graph TD
-    A[My Sessions Screen<br/>Active Tab] --> B[View Active Session<br/>Real-time Duration]
+    A[My Sessions Screen] --> B[View Active Session<br/>Real-time Duration]
     B --> C[Exit Vehicle Button<br/>Green Button]
     C --> D[Check-Out Confirmation<br/>Session Summary]
     D --> E[Payment Processing<br/>Calculate Final Amount]
     E --> F[Payment Successful<br/>Receipt Generated]
-    F --> G[Session Archived<br/>Moved to Past Tab]
+    F --> G[Session End]
     
-    style C fill:#4CAF50,stroke:#2E7D32,color:#fff
-    style A fill:#E3F2FD,stroke:#1976D2
+    
 ```
 
 ### 5.4 FUTURE SCOPE FEATURES (Secondary Priority)
@@ -818,10 +739,8 @@ graph TD
     C --> D[Booking Confirmation<br/>Reserved Slot]
     D --> E[My Bookings Screen<br/>Upcoming Reservations]
     
-    style A fill:#FFF3E0,stroke:#FF9800
-    style B fill:#FFF3E0,stroke:#FF9800
-    classDef future fill:#FFF3E0,stroke:#FF9800,stroke-dasharray: 5 5
-    class B,C,D,E future
+    
+    
 ```
 
 #### 5.4.2 Session Extension Feature (Future Implementation)
@@ -917,3 +836,16 @@ graph TD
 5. 🔄 **Loyalty Programs**
 
 
+---
+```mermaid
+sequenceDiagram
+    title Vehicle Select Activity
+    
+    participant Android
+    participant Backend
+
+    note over Android: In Parking Lot Details Activity On clicking Park Vehicle Button
+    Android->>Backend: GET all Vehicle details(userID)
+    Android->>Backend: POST new Vehicle(optional)
+    Android->>Backend: Start a Session
+    note over Android: Display Session Activity with new session

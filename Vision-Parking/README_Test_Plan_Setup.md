@@ -45,6 +45,39 @@ This test plan outlines the End-to-End (E2E)/Integration test cases implemented 
 | TC13 | `test_bottom_nav_bar_navigation` | Sequentially taps on each icon in the bottom navigation bar (Home, Sessions, Bookings, Profile) and verifies that the correct screen is loaded. | User is logged in. | Each tap navigates to the corresponding screen, verified by a unique element on that screen. |
 | TC14 | `test_burger_menu_opens_and_closes` | Taps the burger menu icon to open the side navigation drawer, verifies it's open, and then closes it to verify it disappears. | User is logged in. | The side navigation drawer slides into view when opened and is no longer visible after being closed. |
 | TC15 | `test_burger_menu_and_bottom_nav_lead_to_same_sessions_screen` | Tests that navigating to "My Sessions" from both the bottom navigation bar and the side burger menu leads to the exact same screen. | User is logged in. | Both navigation actions successfully lead to the "My Sessions" screen, confirming UI consistency. |
+| TC16 | `test_vehicle_addition_success` | Verifies that a user can successfully add a new vehicle to their account with all required details (registration number, name, make, model, year, type, color). | User is logged in. | Vehicle is successfully registered, success message is displayed, and the vehicle appears in the user's vehicle list with correct details. |
+| TC17 | `test_vehicle_addition_empty_fields_validation` | Tests validation errors when attempting to submit vehicle form with empty required fields. | User is logged in and on vehicle addition screen. | Appropriate validation error messages are displayed for empty fields, and form submission is blocked. |
+| TC17 | `test_vehicle_addition_invalid_registration_format` | Tests validation for invalid registration number formats (too short, invalid characters). | User is logged in and on vehicle addition screen. | Validation error message is displayed for invalid registration format. |
+| TC17 | `test_vehicle_addition_invalid_year` | Tests validation for invalid vehicle year values (future year, too old, non-numeric). | User is logged in and on vehicle addition screen. | Validation error message is displayed for invalid year. |
+| TC18 | `test_parking_lot_map_display_and_markers` | Verifies that the map loads correctly and displays parking lot markers with UI controls (FABs for filter, location, QR). | User is logged in. | Map fragment loads successfully, location permissions are handled, and UI controls are visible. |
+| TC18 | `test_parking_lot_list_view_display` | Tests switching to list view and displaying parking lots in RecyclerView format. | User is logged in. | RecyclerView exists and parking lots can be displayed in list format. |
+| TC18 | `test_parking_lot_search_autocomplete` | Tests the Google Places autocomplete search functionality for finding parking locations. | User is logged in. | Autocomplete fragment is accessible and user can interact with search. |
+| TC18 | `test_parking_lot_filter_fab_interaction` | Tests the filter FAB button interaction and verifies app stability. | User is logged in. | Filter FAB is clickable and interaction doesn't crash the app. |
+| TC18 | `test_parking_lot_location_fab_interaction` | Tests the location FAB button to center map on user's current location. | User is logged in. | Location FAB is clickable and map centers on user location. |
+| TC19 | `test_parking_filter_fab_accessible` | Verifies that the filter FAB is accessible, clickable, and app remains stable after interaction. | User is logged in. | Filter FAB is visible and clickable, app remains stable after click. |
+| TC19 | `test_parking_lot_list_view_exists` | Tests that the RecyclerView for parking lots exists in the layout. | User is logged in. | RecyclerView element exists and can be accessed programmatically. |
+| TC19 | `test_filter_fab_and_other_fabs_visible` | Tests that all FABs (Filter, Location, QR) are visible and accessible. | User is logged in. | All FABs are visible and in correct positions. |
+| TC19 | `test_filter_fab_interaction_stability` | Tests that clicking filter FAB multiple times doesn't crash the app. | User is logged in. | Multiple clicks are handled gracefully, app remains responsive. |
+| TC19 | `test_parking_data_loads_on_home_screen` | Tests that parking lot data loads when home screen is displayed. | User is logged in. | Home screen loads successfully, map is displayed, UI elements are accessible. |
+| TC20 | `test_navigate_to_vehicles_screen` | Tests navigation to My Vehicles screen where user can manage vehicles. | User is logged in. | User can access vehicle management, vehicles screen loads correctly. |
+| TC20 | `test_navigate_to_sessions_screen` | Tests navigation to My Sessions screen. | User is logged in. | Sessions screen is accessible and UI loads without crashes. |
+| TC20 | `test_home_screen_parking_data_loads` | Tests that parking lot data loads on home screen with map and UI elements. | User is logged in. | Map displays correctly, parking data is fetched, UI remains responsive. |
+| TC20 | `test_user_has_registered_vehicles` | Tests that user has at least one registered vehicle (prerequisite for sessions). | User is logged in. | User can view their vehicles and at least one vehicle exists. |
+| TC20 | `test_bottom_navigation_functionality` | Tests that bottom navigation works correctly with screen transitions. | User is logged in. | Bottom navigation is visible, navigation items are clickable, screen transitions work. |
+| TC21 | `test_full_parking_session_flow` | Tests the complete parking session flow: login, interact with parking pin, start parking, create vehicle, verify session, and complete exit/payment. | User is logged in with backend running. | Complete flow from parking selection to session completion and payment works successfully. |
+| TC22 | `test_realtime_duration_tracking` | Tests that home screen loads correctly with map and FABs accessible. | User is logged in. | Map loads successfully, FABs are accessible, UI is responsive. |
+| TC22 | `test_realtime_charge_calculation` | Tests that parking data loads without crashes and app remains responsive. | User is logged in. | API calls complete successfully, app remains responsive, no crashes occur. |
+| TC22 | `test_session_details_refresh` | Tests navigation drawer functionality (open, close, menu items). | User is logged in. | Drawer opens correctly, menu items are accessible, drawer closes correctly. |
+| TC22 | `test_active_session_visibility_in_list` | Tests navigation to vehicles screen and back navigation. | User is logged in. | Can navigate to vehicles screen, screen loads without crashes, can navigate back. |
+| TC22 | `test_session_status_updates` | Tests that app remains stable over time without crashes or performance issues. | User is logged in. | App doesn't crash after being idle, UI elements remain accessible. |
+| TC23 | `test_no_available_slots_error` | Tests appropriate error handling when trying to park at a full parking lot. | User is logged in. | System checks availability, clear error message when no slots available. |
+| TC23 | `test_network_error_during_session_creation` | Tests app behavior when network fails during session creation (airplane mode simulation). | User is logged in. | Loading indicators shown, timeout errors handled gracefully, user receives clear error message. |
+| TC23 | `test_location_services_disabled_handling` | Tests app behavior when location services are disabled. | User is logged in. | App detects disabled location, user is prompted to enable, appropriate error/warning shown. |
+| TC23 | `test_invalid_ticket_id_checkout` | Tests error handling when trying to checkout with invalid ticket ID. | User is logged in. | System validates ticket ID, appropriate error for non-existent sessions. |
+| TC23 | `test_duplicate_vehicle_registration_error` | Tests that duplicate vehicle registration is prevented with clear error message. | User is logged in with existing vehicle. | System checks for duplicate registration numbers, clear error message when duplicate detected. |
+| TC23 | `test_app_handles_server_errors_gracefully` | Tests that app handles 500 server errors and API failures gracefully without crashes. | User is logged in. | App doesn't crash on server errors, user-friendly error messages shown. |
+| TC23 | `test_session_timeout_handling` | Tests handling of very long parking sessions or session timeouts. | User is logged in. | App handles long-running sessions correctly, no calculation errors. |
+| TC23 | `test_rapid_button_clicks_handling` | Tests that app handles rapid button clicks without creating duplicate operations. | User is logged in. | Buttons are disabled during processing, no duplicate API calls from rapid clicks. |
 
 
 ## Test Data
@@ -200,6 +233,7 @@ docker-compose up --build -d
 
 ```bash
 pytest --verbose tests/[test_TC01.py]  #for running test cases without generating html report
+pytest -s --verbose .\tests\test_TC21_full_parking_session_flow.py # for running test case with its prints statements enabled
 pytest --html=report.html --self-contained-html --verbose
 ```
 

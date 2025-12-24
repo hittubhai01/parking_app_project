@@ -1,5 +1,5 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:id="@+id/nav_vehicles" android:icon="@drawable/ic_vehicles" android:title="Vehicles" />
+    <item android:id="@+id/nav_vehicles" android:icon="@drawable/ic_vehicles" android:title="My Vehicles" />
     <item android:id="@+id/nav_sessions" android:icon="@drawable/ic_sessions" android:title="My Sessions" />
     <item android:id="@+id/nav_bookings" android:icon="@drawable/ic_bookings" android:title="Bookings" />
     <item android:id="@+id/nav_payments" android:icon="@drawable/ic_payments" android:title="Payments" />

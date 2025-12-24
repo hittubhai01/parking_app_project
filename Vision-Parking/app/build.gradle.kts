@@ -58,7 +58,6 @@ android {
 
 
 dependencies {
-    implementation("com.google.android.material:material:1.11.0")
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
     implementation("androidx.security:security-crypto:1.1.0-alpha06")
@@ -79,4 +78,8 @@ dependencies {
     implementation("com.google.android.libraries.places:places:3.4.0")
     // Maps utils for IconGenerator
     implementation("com.google.maps.android:android-maps-utils:3.4.0")
+    // Glide for image loading
+    implementation("com.github.bumptech.glide:glide:4.16.0")
+    // SwipeRefreshLayout for pull-to-refresh functionality
+    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
 }

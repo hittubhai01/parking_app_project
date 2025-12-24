@@ -1,6 +1,8 @@
 package com.example.visionpark.models;
 
-public class ParkingLot {
+import java.io.Serializable;
+
+public class ParkingLot implements Serializable {
     private int id;
     private String name;
     private double latitude;
@@ -15,6 +17,23 @@ public class ParkingLot {
     private String address;
     private String landmark;
     private double distance; // For sorting by distance
+    private double hourlyRate; // Hourly rate for filtering
+    
+    // Additional fields from backend API
+    private String city;
+    private String parkingType;
+    private boolean hasCctv;
+    private boolean hasBoomBarrier;
+    private String ticketGenerated;
+    private String entryExitGates;
+    private String weeklyOff;
+    private String parkingTiming;
+    private String vehicleTypes;
+    private String allowsPrepaidPasses;
+    private String providesValetServices;
+    private String valueAddedServices;
+    private String availabilityStatus;
+    private boolean isOpen;
 
     // Constructor
     public ParkingLot(int id, String name, double latitude, double longitude, 
@@ -77,6 +96,9 @@ public class ParkingLot {
     public double getDistance() { return distance; }
     public void setDistance(double distance) { this.distance = distance; }
 
+    public double getHourlyRate() { return hourlyRate; }
+    public void setHourlyRate(double hourlyRate) { this.hourlyRate = hourlyRate; }
+
     // Helper methods
     public String getDisplayFee() {
         if (carFee != null && !carFee.isEmpty() && !carFee.equals("Free")) {
@@ -86,16 +108,71 @@ public class ParkingLot {
     }
 
     public String getAvailabilityStatus() {
+        // If availability status is explicitly set from backend, convert it to color code
+        if (availabilityStatus != null && !availabilityStatus.isEmpty()) {
+            String status = availabilityStatus.toLowerCase();
+            switch (status) {
+                case "available":
+                    return "GREEN";
+                case "limited":
+                    return "YELLOW";
+                case "full":
+                    return "RED";
+                default:
+                    return "GRAY";
+            }
+        }
+        
+        // Otherwise calculate based on available slots
         int totalSlots = totalCarSlots + totalTwoWheelerSlots;
         int availableSlots = availableCarSlots + availableTwoWheelerSlots;
         
+        if (totalSlots == 0) return "GRAY"; // No data available
         if (availableSlots == 0) return "RED";
         if (availableSlots < totalSlots * 0.3) return "YELLOW";
         return "GREEN";
     }
 
-    // For testParkingDataLoading method (Remove once data loading works correctly)
-    public Object getCity() {
-        return null;
-    }
+    // Additional getters and setters for new fields
+    public String getCity() { return city; }
+    public void setCity(String city) { this.city = city; }
+    
+    public String getParkingType() { return parkingType; }
+    public void setParkingType(String parkingType) { this.parkingType = parkingType; }
+    
+    public boolean isHasCctv() { return hasCctv; }
+    public void setHasCctv(boolean hasCctv) { this.hasCctv = hasCctv; }
+    
+    public boolean isHasBoomBarrier() { return hasBoomBarrier; }
+    public void setHasBoomBarrier(boolean hasBoomBarrier) { this.hasBoomBarrier = hasBoomBarrier; }
+    
+    public String getTicketGenerated() { return ticketGenerated; }
+    public void setTicketGenerated(String ticketGenerated) { this.ticketGenerated = ticketGenerated; }
+    
+    public String getEntryExitGates() { return entryExitGates; }
+    public void setEntryExitGates(String entryExitGates) { this.entryExitGates = entryExitGates; }
+    
+    public String getWeeklyOff() { return weeklyOff; }
+    public void setWeeklyOff(String weeklyOff) { this.weeklyOff = weeklyOff; }
+    
+    public String getParkingTiming() { return parkingTiming; }
+    public void setParkingTiming(String parkingTiming) { this.parkingTiming = parkingTiming; }
+    
+    public String getVehicleTypes() { return vehicleTypes; }
+    public void setVehicleTypes(String vehicleTypes) { this.vehicleTypes = vehicleTypes; }
+    
+    public String getAllowsPrepaidPasses() { return allowsPrepaidPasses; }
+    public void setAllowsPrepaidPasses(String allowsPrepaidPasses) { this.allowsPrepaidPasses = allowsPrepaidPasses; }
+    
+    public String getProvidesValetServices() { return providesValetServices; }
+    public void setProvidesValetServices(String providesValetServices) { this.providesValetServices = providesValetServices; }
+    
+    public String getValueAddedServices() { return valueAddedServices; }
+    public void setValueAddedServices(String valueAddedServices) { this.valueAddedServices = valueAddedServices; }
+    
+    public String getAvailabilityStatusText() { return availabilityStatus; }
+    public void setAvailabilityStatus(String availabilityStatus) { this.availabilityStatus = availabilityStatus; }
+    
+    public boolean isOpen() { return isOpen; }
+    public void setOpen(boolean open) { isOpen = open; }
 }

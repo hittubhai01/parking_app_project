@@ -5,8 +5,11 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
+        android:name=".VisionParkApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -47,9 +50,31 @@
         <activity
             android:name=".activities.BookingsActivity"
             android:exported="true" />
+        <activity
+            android:name=".activities.ParkingLotDetailsActivity"
+            android:exported="false"
+            android:parentActivityName=".activities.HomeActivity" />
+        <activity
+            android:name=".activities.VehicleListActivity"
+            android:exported="false"
+            android:parentActivityName=".activities.ParkingLotDetailsActivity" />
+        <activity
+            android:name=".activities.VehicleManagementActivity"
+            android:exported="false"
+            android:parentActivityName=".activities.HomeActivity" />
+        <activity
+            android:name=".activities.AddVehicleActivity"
+            android:exported="false"
+            android:parentActivityName=".activities.VehicleListActivity"
+            android:windowSoftInputMode="adjustResize" />
+        <service
+            android:name=".services.SessionTrackingService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="YOUR-GOOGLE-API-KEY" />
+            android:value="AIzaSyD9q-X_oGS8oggZcXHcyXhZBY-8oKbBfGg" />
     </application>
 
 </manifest>

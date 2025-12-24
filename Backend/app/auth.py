@@ -3,7 +3,7 @@ import datetime
 from flask import Blueprint, request, jsonify, current_app
 from .models import User
 from . import db
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required, get_jwt_identity, create_access_token
 from .config import setup_logging
 import logging
 
@@ -284,13 +284,19 @@ def login():
         logger.info(f"Successful login for user: {email} (Role: {user.role})")
         
         try:
-            payload = {
-                "user_id": user.user_id,
+            # Create additional claims for the token
+            # Include user_id explicitly in additional_claims for consistency
+            additional_claims = {
                 "role": user.role,
-                "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=12)
+                "user_id": user.user_id
             }
-            secret = current_app.config.get('JWT_SECRET_KEY') or current_app.config.get('SECRET_KEY')
-            token = jwt.encode(payload, secret, algorithm="HS256")
+            
+            # Use flask_jwt_extended to create the token with user_id as identity
+            token = create_access_token(
+                identity=user.user_id,
+                additional_claims=additional_claims,
+                expires_delta=datetime.timedelta(hours=12)
+            )
             
             logger.info(f"JWT token generated successfully for user: {email}")
             return jsonify({

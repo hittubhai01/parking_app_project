@@ -57,6 +57,10 @@ docker-compose logs nginx
 
 # Follow logs in real-time
 docker-compose logs -f app
+
+#Command to remove all the containers (running and stopped)
+docker rm -f $(docker ps -aq)
+
 ```
 
 ### Container Management
