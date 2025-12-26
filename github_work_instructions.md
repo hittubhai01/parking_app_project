@@ -137,7 +137,7 @@ If you are not a direct collaborator (i.e., you do not have push access), you wo
    ```bash
    git add Backend/ Vision-Parking/   # Stage all changes in both folders
    git commit -m "[Cross-Project] Implement feature across Backend and Vision-Parking"   # Commit with a descriptive message
-   eg. git commit -m "[cross Project] Implement feature across Backend and Vision-Parking"
+   eg. git commit -m "[Backend, Android] Implement feature across Backend and Vision-Parking"
    ```
 
 7. **Push Your Branch to GitHub**
@@ -209,3 +209,4 @@ If you do not have push access to the repository, fork the repository on GitHub,
 # Other approaches for Project Structure 
 
 To mono repo (single GitHub repo for android, backend, ML(parking server), admin etc.) could have been using separate GitHub repos for each project e.g. android has its own repo, backend hosted in separate repo etc. The motivation for single repo is that CI/CD for android is using main latest codebase of backend as it is end to end scenarios. If we have opted for multi-repo approach, for end to end testing, one could have used docker image of backend (as opposed to building fresh docker image as in current approach)
+
