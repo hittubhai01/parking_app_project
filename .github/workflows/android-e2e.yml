@@ -139,14 +139,14 @@ jobs:
       - name: Inject Google Maps API Key
         run: echo "MAPS_API_KEY=${{ secrets.MAPS_API_KEY }}" > Vision-Parking/local.properties
 
-      # Build Android APK
+      
+      - name: Make gradlew executable
+        run: chmod +x Vision-Parking/gradlew
+
       - name: Build Android APK
         run: ./gradlew assembleDebug
         working-directory: ./Vision-Parking
 
-      # Make gradlew executable (required for Linux CI)
-      - name: Make gradlew executable
-        run: chmod +x Vision-Parking/gradlew
 
       # Make run_e2e.sh executable (required for Linux CI)
       - name: Make run_e2e.sh executable
@@ -210,4 +210,5 @@ jobs:
         run: docker compose down -v # Use `docker compose` (v2 syntax)
         working-directory: ./Backend
         if: always() # Run this step even if previous steps failed
+
 
