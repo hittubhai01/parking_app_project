@@ -97,7 +97,7 @@ jobs:
       - name: Setup database with seeding file
         run: |
           echo "Copying seeding file to database container..."
-          docker cp Backend/COMPLETE_DATABASE_SETUP_FIXED.sql $(docker compose ps -q db):/setup.sql
+          docker cp COMPLETE_DATABASE_SETUP_FIXED.sql $(docker compose ps -q db):/setup.sql
           echo "Executing seeding file..."
           docker compose exec -T db psql -U parking_user -d parking_db -f /setup.sql
           echo "Database setup completed successfully!"
@@ -210,3 +210,4 @@ jobs:
         run: docker compose down -v # Use `docker compose` (v2 syntax)
         working-directory: ./Backend
         if: always() # Run this step even if previous steps failed
+
