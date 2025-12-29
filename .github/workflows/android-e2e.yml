@@ -2,15 +2,18 @@ name: Android E2E Tests with Backend
 
 on:
   push:
-    branches: [main, master]
+    branches:
+      - main
+      - master
   pull_request:
-    branches: [main, master]
+    branches:
+      - main
+      - master
   workflow_dispatch:
 
 jobs:
   e2e-tests:
     runs-on: ubuntu-latest
-
     env:
       ANDROID_SDK_ROOT: ${{ github.workspace }}/.android/sdk
       API_LEVEL: 28
@@ -18,29 +21,30 @@ jobs:
       PYTHON_VERSION: '3.12'
       JAVA_VERSION: 17
       APPIUM_LOG_FILE: appium.log
-      TEST_REPORT_DIR: Vision-Parking/app/build/reports/androidTests/connected
-      JUNIT_REPORT_DIR: Vision-Parking/app/build/outputs/androidTest-results/connected
+      TEST_REPORT_FILE: Vision-Parking/tests/report.html
+
       APP_PACKAGE: com.example.visionpark
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Set up JDK
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
         uses: actions/setup-java@v4
         with:
-          distribution: temurin
+          distribution: 'temurin'
           java-version: ${{ env.JAVA_VERSION }}
-          cache: gradle
+          cache: 'gradle'
 
-      - name: Set up Python
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          cache: pip
+          cache: 'pip'
 
       - name: Install Python dependencies
         run: |
-          pip install --upgrade pip
+          python -m pip install --upgrade pip
           pip install -r Vision-Parking/tests/requirements.txt
 
       - name: Set up Android SDK
@@ -49,59 +53,89 @@ jobs:
           packages: platform-tools system-images;android-${{ env.API_LEVEL }};google_apis;x86_64 build-tools;28.0.3
           android-sdk-path: ${{ env.ANDROID_SDK_ROOT }}
 
-      - name: Start backend
+      - name: Cache Android AVD
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.android/avd
+            ~/.android/adb*
+            ~/.android/avd/*.ini
+          key: avd-${{ env.API_LEVEL }}-google_apis-x86_64
+
+      - name: Clean up Docker Compose
+        run: docker compose down -v
+        working-directory: ./Backend
+        if: always()
+
+      - name: Start backend with Docker Compose
         run: docker compose up -d
         working-directory: ./Backend
 
-      - name: Wait for backend
+      - name: Wait for database to be ready
         run: |
-          for i in {1..30}; do
+          for i in $(seq 1 30); do
+            if docker compose exec -T db pg_isready -U parking_user -d parking_db; then break; fi
+            sleep 5
+          done
+        working-directory: ./Backend
+
+      - name: Setup database with seeding file
+        run: |
+          docker cp COMPLETE_DATABASE_SETUP_FIXED.sql $(docker compose ps -q db):/setup.sql
+          docker compose exec -T db psql -U parking_user -d parking_db -f /setup.sql
+        working-directory: ./Backend
+
+      - name: Wait for backend API to be ready
+        run: |
+          for i in $(seq 1 30); do
             if curl -s http://localhost:5000/health; then exit 0; fi
             sleep 5
           done
           exit 1
+        working-directory: ./Backend
 
-      - name: Build APK
+      - name: Make gradlew executable
+        run: chmod +x Vision-Parking/gradlew
+
+      - name: Build Android APK
         run: ./gradlew assembleDebug
         working-directory: ./Vision-Parking
 
-      - name: Run E2E tests
+      - name: Make run_e2e.sh executable
+        run: chmod +x Vision-Parking/run_e2e.sh
+
+      - name: Run E2E tests on emulator
         uses: ReactiveCircus/android-emulator-runner@v2
         with:
           api-level: ${{ env.API_LEVEL }}
           target: google_apis
           arch: x86_64
           profile: Nexus 5
-          emulator-options: -no-window -no-audio -no-boot-anim -no-snapshot -wipe-data
+          emulator-options: -no-window -no-audio -no-boot-anim -no-snapshot -memory 2048 -wipe-data -partition-size 4096
           script: |
+            adb wait-for-device
+
             adb shell pm grant $APP_PACKAGE android.permission.CAMERA || true
             adb shell pm grant $APP_PACKAGE android.permission.ACCESS_FINE_LOCATION || true
             adb shell pm grant $APP_PACKAGE android.permission.ACCESS_COARSE_LOCATION || true
 
-            timeout 20m ./Vision-Parking/gradlew connectedAndroidTest --info --stacktrace
+            timeout 20m ./Vision-Parking/run_e2e.sh
 
-      - name: Upload Android HTML Report
-        if: always()
+      - name: Upload test report
         uses: actions/upload-artifact@v4
         with:
-          name: android-html-report
-          path: ${{ env.TEST_REPORT_DIR }}
-
-      - name: Upload JUnit XML Results
+          name: e2e-test-report
+          path: ${{ env.TEST_REPORT_FILE }}
         if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: junit-results
-          path: ${{ env.JUNIT_REPORT_DIR }}
 
-      - name: Upload Appium Log
-        if: always()
+      - name: Upload Appium log
         uses: actions/upload-artifact@v4
         with:
           name: appium-log
           path: ${{ env.APPIUM_LOG_FILE }}
-
-      - name: Cleanup Docker
         if: always()
+
+      - name: Clean up Docker Compose
         run: docker compose down -v
         working-directory: ./Backend
+        if: always()
