@@ -3,6 +3,7 @@ set -e
 
 # === Global config ===
 export APPIUM_LOG_FILE="/tmp/appium.log"
+export TEST_REPORT_FILE="tests/report.html"
 
 cleanup_logcat() {
   echo "Capturing final logcat output..."
@@ -45,13 +46,6 @@ for i in $(seq 1 30); do
   sleep 5
 done
 
-echo "=== ADB diagnostics ==="
-${ANDROID_SDK_ROOT}/platform-tools/adb devices
-${ANDROID_SDK_ROOT}/platform-tools/adb shell getprop
-${ANDROID_SDK_ROOT}/platform-tools/adb shell df -h
-${ANDROID_SDK_ROOT}/platform-tools/adb shell uptime
-${ANDROID_SDK_ROOT}/platform-tools/adb shell top -n 1
-
 echo "Sleeping 10 seconds before install..."
 sleep 10
 
@@ -74,77 +68,43 @@ fi
 
 echo "Installing Appium globally..."
 npm install -g appium
-
-echo "Installing Appium UiAutomator2 driver..."
 appium driver install uiautomator2
 
-echo "Appium version:"
-appium -v
-
-echo "Starting Appium server in background with debug logging..."
+echo "Starting Appium server..."
 nohup appium --base-path /wd/hub --log "$APPIUM_LOG_FILE" --log-level debug &
 APPIUM_PID=$!
 
-echo "Waiting for Appium server to be ready (up to 60s)..."
+echo "Waiting for Appium to start..."
 for i in {1..60}; do
   if nc -z 127.0.0.1 4723; then
-    echo "✅ Appium is up!"
+    echo "✅ Appium is running"
     break
   fi
   sleep 1
 done
 
 if ! nc -z 127.0.0.1 4723; then
-  echo "❌ Appium did not start in time!"
-  echo "Printing Appium log for immediate debugging:"
+  echo "❌ Appium did not start"
   cat "$APPIUM_LOG_FILE"
   exit 1
 fi
 
-if [ "$(basename "$PWD")" != "Vision-Parking" ]; then
-  cd Vision-Parking || { echo "Failed to change directory to Vision-Parking"; exit 1; }
-fi
+cd Vision-Parking || exit 1
 
-export TEST_REPORT_FILE=tests/report.html
+echo "Running Pytest with HARD TIMEOUT PROTECTION..."
+pytest tests \
+  -v \
+  --maxfail=1 \
+  --disable-warnings \
+  --html="$TEST_REPORT_FILE" \
+  --self-contained-html \
+  --timeout=120 \
+  --timeout-method=thread
 
-echo "Running pytest E2E tests..."
-pytest -q --disable-warnings --html="$TEST_REPORT_FILE" --self-contained-html
 PYTEST_EXIT=$?
 
-if [ ! -f "$TEST_REPORT_FILE" ]; then
-  echo "❌ Test report not generated, marking as failed."
-  exit 1
-fi
+echo "Stopping Appium..."
+kill $APPIUM_PID || true
+wait $APPIUM_PID 2>/dev/null || true
 
-# New logic: If pytest passed, exit successfully immediately
-if [ $PYTEST_EXIT -eq 0 ]; then
-  echo "✅ All Pytest E2E tests passed. Exiting successfully."
-  # Stop Appium cleanly
-  echo "Stopping Appium (PID=$APPIUM_PID)..."
-  kill $APPIUM_PID || true
-  wait $APPIUM_PID 2>/dev/null || true
-  # Do NOT kill emulator or adb here. Let the android-emulator-runner action handle it.
-  exit 0
-else
-  # If pytest failed, proceed to capture logs for debugging
-  echo "❌ Pytest exited with code $PYTEST_EXIT. This indicates test failures or errors. Collecting logs for debugging."
-  # Add a 1-minute (60-second) delay before killing Appium to ensure logs are flushed
-  echo "Waiting 60 seconds for Appium to flush all logs and complete operations before stopping..."
-  sleep 60
-
-  echo "Stopping Appium (PID=$APPIUM_PID)..."
-  kill $APPIUM_PID || true
-  wait $APPIUM_PID 2>/dev/null || true
-  # Do NOT kill emulator or adb here. Let the android-emulator-runner action handle it.
-
-  # Final log check
-  if [ -n "$APPIUM_LOG_FILE" ] && [ -f "$APPIUM_LOG_FILE" ]; then
-    echo "✅ Appium log exists: $APPIUM_LOG_FILE"
-  else
-    echo "⚠️ Appium log not found or empty!"
-    touch "$APPIUM_LOG_FILE"
-  fi
-
-  # Exit with the pytest failure status
-  exit $PYTEST_EXIT
-fi
+exit $PYTEST_EXIT
