@@ -127,21 +127,40 @@ jobs:
           target: google_apis
           arch: x86_64
           profile: Nexus 5
-          emulator-options: -no-window -no-audio -no-boot-anim -no-snapshot -memory 2048 -wipe-data -partition-size 4096
+          ram-size: 4096M
+          heap-size: 1024M
+          emulator-options: -no-window -no-audio -no-boot-anim -no-snapshot -memory 4096 -wipe-data -partition-size 8192 -gpu swiftshader_indirect -camera-back none -camera-front none
+          disable-animations: true
           script: |
             echo "Waiting for device..."
             adb wait-for-device
+            
+            echo "Waiting for system to be ready..."
+            adb shell 'while [[ -z $(getprop sys.boot_completed) ]]; do sleep 1; done'
+            
+            echo "Waiting for package manager..."
+            adb shell 'while ! pm list packages > /dev/null 2>&1; do sleep 1; done'
             
             echo "Device ready, granting permissions..."
             adb shell pm grant $APP_PACKAGE android.permission.CAMERA || true
             adb shell pm grant $APP_PACKAGE android.permission.ACCESS_FINE_LOCATION || true
             adb shell pm grant $APP_PACKAGE android.permission.ACCESS_COARSE_LOCATION || true
+            adb shell pm grant $APP_PACKAGE android.permission.WRITE_EXTERNAL_STORAGE || true
+            adb shell pm grant $APP_PACKAGE android.permission.READ_EXTERNAL_STORAGE || true
             
             echo "Installing APK..."
-            adb install Vision-Parking/app/build/outputs/apk/debug/app-debug.apk
+            adb install -r Vision-Parking/app/build/outputs/apk/debug/app-debug.apk
+            
+            echo "Verifying app installation..."
+            adb shell pm list packages | grep $APP_PACKAGE
+            
+            echo "Starting app to verify it launches..."
+            adb shell am start -n $APP_PACKAGE/com.example.visionpark.activities.SplashScreenActivity
+            sleep 5
+            adb shell am force-stop $APP_PACKAGE
             
             echo "Running E2E tests..."
-            cd Vision-Parking && ./run_e2e.sh
+            cd Vision-Parking && timeout 25m ./run_e2e.sh
 
       - name: Upload test report
         uses: actions/upload-artifact@v4
