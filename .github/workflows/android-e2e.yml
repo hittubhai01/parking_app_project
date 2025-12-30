@@ -151,12 +151,23 @@ jobs:
             echo "Installing APK..."
             adb install -r Vision-Parking/app/build/outputs/apk/debug/app-debug.apk
             
+            echo "Clearing app data to ensure clean state..."
+            adb shell pm clear $APP_PACKAGE || echo "Could not clear app data"
+            
             echo "Verifying app installation..."
             adb shell pm list packages | grep $APP_PACKAGE
             
             echo "Starting app to verify it launches..."
             adb shell am start -n $APP_PACKAGE/com.example.visionpark.activities.SplashScreenActivity
             sleep 5
+            
+            echo "Checking if app is running..."
+            adb shell "ps | grep $APP_PACKAGE" || adb shell "ps -A | grep $APP_PACKAGE" || echo "App process not found"
+            
+            echo "Getting current activity..."
+            adb shell dumpsys activity activities | grep "mResumedActivity" || echo "Could not get current activity"
+            
+            echo "Stopping app before tests..."
             adb shell am force-stop $APP_PACKAGE
             
             echo "Running E2E tests..."
