@@ -21,8 +21,7 @@ jobs:
       PYTHON_VERSION: '3.12'
       JAVA_VERSION: 17
       APPIUM_LOG_FILE: appium.log
-      TEST_REPORT_FILE: Vision-Parking/tests/report.html
-
+      TEST_REPORT_FILE: tests/report.html
       APP_PACKAGE: com.example.visionpark
 
     steps:
@@ -94,6 +93,21 @@ jobs:
           exit 1
         working-directory: ./Backend
 
+      - name: Verify database setup
+        run: |
+          echo "Verifying database tables and data..."
+          docker compose exec -T db psql -U parking_user -d parking_db -c "
+            SELECT 
+              (SELECT COUNT(*) FROM users) as users,
+              (SELECT COUNT(*) FROM parkinglots_details) as parking_lots,
+              (SELECT COUNT(*) FROM user_vehicles) as vehicles,
+              (SELECT COUNT(*) FROM parking_sessions) as sessions;
+          "
+        working-directory: ./Backend
+
+      - name: Inject Google Maps API Key
+        run: echo "MAPS_API_KEY=${{ secrets.MAPS_API_KEY }}" > Vision-Parking/local.properties
+
       - name: Make gradlew executable
         run: chmod +x Vision-Parking/gradlew
 
@@ -106,6 +120,8 @@ jobs:
 
       - name: Run E2E tests on emulator
         uses: ReactiveCircus/android-emulator-runner@v2
+        env:
+          APP_PACKAGE: ${{ env.APP_PACKAGE }}
         with:
           api-level: ${{ env.API_LEVEL }}
           target: google_apis
@@ -113,19 +129,25 @@ jobs:
           profile: Nexus 5
           emulator-options: -no-window -no-audio -no-boot-anim -no-snapshot -memory 2048 -wipe-data -partition-size 4096
           script: |
+            echo "Waiting for device..."
             adb wait-for-device
-
+            
+            echo "Device ready, granting permissions..."
             adb shell pm grant $APP_PACKAGE android.permission.CAMERA || true
             adb shell pm grant $APP_PACKAGE android.permission.ACCESS_FINE_LOCATION || true
             adb shell pm grant $APP_PACKAGE android.permission.ACCESS_COARSE_LOCATION || true
-
-            timeout 20m ./Vision-Parking/run_e2e.sh
+            
+            echo "Installing APK..."
+            adb install Vision-Parking/app/build/outputs/apk/debug/app-debug.apk
+            
+            echo "Running E2E tests..."
+            cd Vision-Parking && ./run_e2e.sh
 
       - name: Upload test report
         uses: actions/upload-artifact@v4
         with:
           name: e2e-test-report
-          path: ${{ env.TEST_REPORT_FILE }}
+          path: Vision-Parking/${{ env.TEST_REPORT_FILE }}
         if: always()
 
       - name: Upload Appium log

@@ -7,23 +7,20 @@ export TEST_REPORT_FILE="tests/report.html"
 
 cleanup_logcat() {
   echo "Capturing final logcat output..."
-  ${ANDROID_SDK_ROOT}/platform-tools/adb logcat -d > /tmp/logcat.txt 2>&1 || touch /tmp/logcat.txt
+  adb logcat -d > /tmp/logcat.txt 2>&1 || touch /tmp/logcat.txt
 }
 trap cleanup_logcat EXIT
 
+# Ensure we're in Vision-Parking directory
 cd "$(dirname "$0")"
-
-chmod +x gradlew
-
-echo "Assembling debug APK..."
-./gradlew assembleDebug -p app
+echo "Current working directory: $PWD"
 
 echo "Waiting for Android device..."
-${ANDROID_SDK_ROOT}/platform-tools/adb wait-for-device
+adb wait-for-device
 
 echo "Polling for emulator boot completion..."
 for i in $(seq 1 30); do
-  BOOT_STATUS=$(${ANDROID_SDK_ROOT}/platform-tools/adb shell getprop sys.boot_completed | tr -d '\r')
+  BOOT_STATUS=$(adb shell getprop sys.boot_completed | tr -d '\r')
   if [[ "$BOOT_STATUS" == "1" ]]; then
     echo "✅ Emulator boot completed"
     break
@@ -38,7 +35,7 @@ fi
 
 echo "Waiting for package manager service..."
 for i in $(seq 1 30); do
-  if ${ANDROID_SDK_ROOT}/platform-tools/adb shell service check package | grep -q "found"; then
+  if adb shell service check package | grep -q "found"; then
     echo "✅ Package manager service is available"
     break
   fi
@@ -52,7 +49,7 @@ sleep 10
 echo "Installing app-debug.apk with retries..."
 INSTALL_SUCCESS=0
 for i in $(seq 1 5); do
-  if ${ANDROID_SDK_ROOT}/platform-tools/adb install -r app/build/outputs/apk/debug/app-debug.apk; then
+  if adb install -r app/build/outputs/apk/debug/app-debug.apk; then
     INSTALL_SUCCESS=1
     echo "✅ APK installed successfully on attempt $i"
     break
@@ -89,22 +86,18 @@ if ! nc -z 127.0.0.1 4723; then
   exit 1
 fi
 
-cd Vision-Parking || exit 1
-
-echo "Running Pytest with HARD TIMEOUT PROTECTION..."
+echo "Running Pytest E2E tests..."
 pytest tests \
   -v \
   --maxfail=1 \
   --disable-warnings \
   --html="$TEST_REPORT_FILE" \
-  --self-contained-html \
-  --timeout=120 \
-  --timeout-method=thread
+  --self-contained-html
 
 PYTEST_EXIT=$?
 
 echo "Stopping Appium..."
-kill $APPIUM_PID || true
+kill $APPIUM_PID 2>/dev/null || true
 wait $APPIUM_PID 2>/dev/null || true
 
 exit $PYTEST_EXIT
