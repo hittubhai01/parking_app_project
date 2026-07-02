@@ -284,7 +284,8 @@ VALUES
 (26, 'user26', 'user26@parking.com', 'scrypt:32768:8:1$GaMG6bFAxMO1ate5$e918a348b3fa96accf2954613b74692548218702a63dd24928e269407ce904bbd7d088643e45e261a95b52f58bc41c3609d9ef3de9bb9a7abe87ce9d6efcb463', '+91910000226', 'Azadpur, Delhi', 'user', now() - INTERVAL '84 days'),
 (27, 'user27', 'user27@parking.com', 'scrypt:32768:8:1$GaMG6bFAxMO1ate5$e918a348b3fa96accf2954613b74692548218702a63dd24928e269407ce904bbd7d088643e45e261a95b52f58bc41c3609d9ef3de9bb9a7abe87ce9d6efcb463', '+91910000227', 'Shalimar Bagh, Delhi', 'user', now() - INTERVAL '83 days'),
 (28, 'user28', 'user28@parking.com', 'scrypt:32768:8:1$GaMG6bFAxMO1ate5$e918a348b3fa96accf2954613b74692548218702a63dd24928e269407ce904bbd7d088643e45e261a95b52f58bc41c3609d9ef3de9bb9a7abe87ce9d6efcb463', '+91910000228', 'Paharganj, Delhi', 'user', now() - INTERVAL '82 days'),
-(29, 'user29', 'user29@parking.com', 'scrypt:32768:8:1$GaMG6bFAxMO1ate5$e918a348b3fa96accf2954613b74692548218702a63dd24928e269407ce904bbd7d088643e45e261a95b52f58bc41c3609d9ef3de9bb9a7abe87ce9d6efcb463', '+91910000229', 'Malviya Nagar, Delhi', 'user', now() - INTERVAL '81 days');
+(29, 'user29', 'user29@parking.com', 'scrypt:32768:8:1$GaMG6bFAxMO1ate5$e918a348b3fa96accf2954613b74692548218702a63dd24928e269407ce904bbd7d088643e45e261a95b52f58bc41c3609d9ef3de9bb9a7abe87ce9d6efcb463', '+91910000229', 'Malviya Nagar, Delhi', 'user', now() - INTERVAL '81 days'),
+(30, 'Arun Singh', 'arunsingh17683@gmail.com', 'scrypt:32768:8:1$GaMG6bFAxMO1ate5$e918a348b3fa96accf2954613b74692548218702a63dd24928e269407ce904bbd7d088643e45e261a95b52f58bc41c3609d9ef3de9bb9a7abe87ce9d6efcb463', '1234321123', '456Noida', 'user', now() - INTERVAL '80 days');
 
 
 -- ===========================

@@ -1,76 +1,137 @@
 import pytest
-from app import create_app, db
+import uuid
 import json
-import logging
-# Set up logging
-logging.basicConfig(
-    level=logging.DEBUG,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler("test_debug.log"),
-        logging.StreamHandler()
-    ]
-)
-logger = logging.getLogger(__name__)
-@pytest.fixture(scope='function')
+from app import create_app, db as _db
+from app.models import ParkingLotDetails, Floor, Row, Slot
+
+
+@pytest.fixture(scope='function')        # function scope = fresh DB every test
 def app():
-    """Create and configure a new app instance for each test function."""
-    logger.info("Creating test app instance")
     app = create_app('testing')
     with app.app_context():
-        logger.info("Creating database tables")
-        db.create_all()
+        _db.create_all()
         yield app
-        logger.info("Dropping database tables")
-        db.drop_all()
+        _db.session.remove()
+        _db.drop_all()
+
+
 @pytest.fixture(scope='function')
 def client(app):
-    """A test client for the app."""
-    logger.info("Creating test client")
     return app.test_client()
+
+
 @pytest.fixture(scope='function')
 def auth_headers(client):
-    """Get auth headers for a test user."""
-    logger.info("Setting up auth headers")
-    # Register a user
-    logger.debug("Attempting user registration")
-    register_data = dict(
-        user_name='authuser',
-        user_email='auth@example.com',
-        user_password='password',
-        user_phone_no='5555555555'
+    uid = str(uuid.uuid4())[:8]
+    email = f"user_{uid}@example.com"
+    phone = f"9{uid[:9].ljust(9,'0')}"
+    client.post('/auth/register', json={
+        'user_name':     f'user_{uid}',
+        'user_email':    email,
+        'user_password': 'password123',
+        'user_phone_no': phone,
+        'user_address':  'Test Address'
+    })
+    resp = client.post('/auth/login', json={
+        'user_email':    email,
+        'user_password': 'password123',
+        'role':          'user'           # required by your login endpoint
+    })
+    token = resp.json['access_token']
+    return {'Authorization': f'Bearer {token}'}
+
+
+@pytest.fixture(scope='function')
+def super_admin_headers(client):
+    uid = str(uuid.uuid4())[:8]
+    email = f"super_{uid}@example.com"
+    phone = f"1{uid[:9].ljust(9,'0')}"
+    client.post('/auth/register', json={
+        'user_name':          f'super_{uid}',
+        'user_email':         email,
+        'user_password':      'password123',
+        'user_phone_no':      phone,
+        'user_address':       'HQ',
+        'role':               'super_admin',
+        'super_admin_secret': 'SUPER_SECRET_SUPER_ADMIN_KEY'
+    })
+    resp = client.post('/auth/login', json={
+        'user_email':    email,
+        'user_password': 'password123',
+        'role':          'super_admin'
+    })
+    token = resp.json['access_token']
+    return {'Authorization': f'Bearer {token}'}
+
+
+@pytest.fixture(scope='function')
+def admin_headers(client, super_admin_headers):
+    uid = str(uuid.uuid4())[:8]
+    admin_email = f"admin_{uid}@example.com"
+    admin_phone = f"8{uid[:9].ljust(9,'0')}"
+    resp = client.post('/admin/register_admin', json={
+        'user_name':     f'admin_{uid}',
+        'user_email':    admin_email,
+        'user_password': 'adminpass',
+        'user_phone_no': admin_phone,
+        'user_address':  'Admin Desk'
+    }, headers=super_admin_headers)
+    assert resp.status_code == 201
+    resp = client.post('/auth/login', json={
+        'user_email':    admin_email,
+        'user_password': 'adminpass',
+        'role':          'admin'
+    })
+    token = resp.json['access_token']
+    return {'Authorization': f'Bearer {token}'}
+
+
+@pytest.fixture(scope='function')
+def test_parking_setup(client, auth_headers):
+    lot = ParkingLotDetails(
+        name='Test Parking Lot',
+        address='123 Test St',
+        city='Test City',
+        car_parking_charge='First hour: €2.50, Each additional hour: €1.50',
+        parking_timing='24x7',
+        vehicle_types='Car,Bike',
+        car_capacity=10,
+        available_car_slots=10,
+        two_wheeler_capacity=5,
+        available_two_wheeler_slots=5,
     )
-    reg_response = client.post('/auth/register',
-                data=json.dumps(register_data),
-                content_type='application/json')
-    logger.debug(f"Registration response status: {reg_response.status_code}")
-    logger.debug(f"Registration response data: {reg_response.data}")
-    # Login the user
-    logger.debug("Attempting user login")
-    login_data = dict(
-        user_email='auth@example.com',  # Use correct field name
-        user_password='password',       # Use correct field name
-        role='user'                     # Added role field
-    )
-    response = client.post('/auth/login',
-                         data=json.dumps(login_data),
-                         content_type='application/json')
-    logger.debug(f"Login response status: {response.status_code}")
-    logger.debug(f"Login response data: {response.data}")
-    # Check if login was successful
-    if response.status_code != 200:
-        logger.error(f"Login failed with status {response.status_code}")
-        logger.error(f"Response data: {response.data}")
-        pytest.fail(f"Login failed with status {response.status_code}: {response.data}")
-    try:
-        # Parse the response
-        response_data = json.loads(response.data)
-        access_token = response_data['access_token']
-        logger.debug("Successfully extracted access token")
-        return {'Authorization': f'Bearer {access_token}'}
-    except KeyError:
-        logger.error(f"Access token not found in response: {response.data}")
-        pytest.fail("Access token not found in login response")
-    except json.JSONDecodeError:
-        logger.error(f"Invalid JSON response: {response.data}")
-        pytest.fail("Invalid JSON response from login endpoint")
+    _db.session.add(lot)
+    _db.session.commit()
+
+    floor = Floor(name='Ground Floor', parkinglot_id=lot.id)
+    _db.session.add(floor)
+    _db.session.commit()
+
+    row = Row(name='Row A', floor_id=floor.id, parkinglot_id=lot.id)
+    _db.session.add(row)
+    _db.session.commit()
+
+    slot_ids = []
+    for i in range(1, 4):
+        slot = Slot(name=f'Slot {i}', status=0,
+                    row_id=row.id, floor_id=floor.id, parkinglot_id=lot.id)
+        _db.session.add(slot)
+        _db.session.flush()
+        slot_ids.append(slot.id)
+    _db.session.commit()
+
+    return {'lot_id': lot.id, 'floor_id': floor.id,
+            'row_id': row.id, 'slot_ids': slot_ids}
+
+
+@pytest.fixture(scope='function')
+def test_vehicle(client, auth_headers):
+    resp = client.post('/user/vehicles', headers=auth_headers, json={
+        'registration_number': 'TEST123',
+        'vehicle_name':        'Test Car',
+        'make':                'Toyota',
+        'model':               'Camry',
+        'vehicle_type':        'car',
+    })
+    assert resp.status_code == 201, f"Vehicle creation failed: {resp.data}"
+    return json.loads(resp.data)['data']['vehicle_id']

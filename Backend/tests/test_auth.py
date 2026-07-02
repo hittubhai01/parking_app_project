@@ -13,7 +13,8 @@ def test_user_registration(client):
                                user_name='testuser',
                                user_email='test@example.com',
                                user_password='password',
-                               user_phone_no='1234567890'
+                               user_phone_no='1234567890',
+                               user_address='123 Test St'
                            )),
                            content_type='application/json')
     assert response.status_code == 201
@@ -32,7 +33,8 @@ def test_user_login(client):
                     user_name='loginuser',
                     user_email='login@example.com',
                     user_password='password',
-                    user_phone_no='0987654321'
+                    user_phone_no='0987654321',
+                               user_address='123 Test St'
                 )),
                 content_type='application/json')
 
@@ -57,7 +59,8 @@ def test_user_registration_with_role(client):
             user_name='roleuser',
             user_email='roleuser@example.com',
             user_password='password',
-            user_phone_no='1111111111'
+            user_phone_no='1111111111',
+                               user_address='123 Test St'
         )),
         content_type='application/json')
     assert response.status_code == 201
@@ -99,7 +102,8 @@ def test_login_returns_role(client):
             user_name='jwtroleuser',
             user_email='jwtrole@example.com',
             user_password='password',
-            user_phone_no='4444444444'
+            user_phone_no='4444444444',
+                               user_address='123 Test St'
         )),
         content_type='application/json')
     # Login

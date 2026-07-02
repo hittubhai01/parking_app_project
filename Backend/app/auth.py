@@ -293,7 +293,7 @@ def login():
             
             # Use flask_jwt_extended to create the token with user_id as identity
             token = create_access_token(
-                identity=user.user_id,
+                identity=str(user.user_id),
                 additional_claims=additional_claims,
                 expires_delta=datetime.timedelta(hours=12)
             )

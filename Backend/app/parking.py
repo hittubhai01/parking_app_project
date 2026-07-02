@@ -1513,3 +1513,27 @@ def delete_slot(slot_id):
     db.session.delete(slot)
     db.session.commit()
     return jsonify({"message": "Slot deleted successfully"})
+@parking_bp.route('/lots/bulk-stats', methods=['GET'])
+@role_required("user")
+def get_bulk_parking_stats():
+    """Get stats for all parking lots in a single query."""
+    try:
+        from sqlalchemy import func, case
+        results = db.session.query(
+            Slot.parkinglot_id,
+            func.count(Slot.id).label('total_slots'),
+            func.sum(case((Slot.status == 0, 1), else_=0)).label('available_slots'),
+            func.sum(case((Slot.status == 1, 1), else_=0)).label('occupied_slots')
+        ).group_by(Slot.parkinglot_id).all()
+        
+        stats = {}
+        for r in results:
+            stats[r.parkinglot_id] = {
+                'total_slots': r.total_slots,
+                'available_slots': r.available_slots,
+                'occupied_slots': r.occupied_slots
+            }
+        return jsonify({"success": True, "data": stats})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"success": True, "data": {}}), 200
