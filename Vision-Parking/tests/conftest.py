@@ -1,9 +1,16 @@
+import os
 import pytest
 from appium import webdriver
 from appium.options.android import UiAutomator2Options
 
 @pytest.fixture(scope="function")
 def driver():
+    # Collapse statusbar/notification shade to prevent covering the UI
+    try:
+        os.system("adb shell cmd statusbar collapse")
+    except Exception:
+        pass
+
     options = UiAutomator2Options()
     options.platform_name = 'Android'
     options.automation_name = 'UiAutomator2'

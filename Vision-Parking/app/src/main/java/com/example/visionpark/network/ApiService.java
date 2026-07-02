@@ -4,6 +4,7 @@ import com.example.visionpark.models.ParkingLot;
 import com.example.visionpark.models.ParkingSession;
 import com.example.visionpark.models.PaymentInfo;
 import com.example.visionpark.models.UserVehicle;
+import com.example.visionpark.models.ParkingBooking;
 import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.DELETE;
@@ -110,6 +111,51 @@ public interface ApiService {
      */
     @GET("user/sessions/history")
     Call<ApiResponse<List<ParkingSession>>> getSessionHistory();
+
+    /**
+     * Check availability for booking a parking slot
+     */
+    @GET("api/v1/parking/lots/{lotId}/availability")
+    Call<ApiResponse<BookingAvailability>> checkBookingAvailability(
+        @Path("lotId") int lotId,
+        @Query("date") String date,
+        @Query("start_time") String startTime,
+        @Query("end_time") String endTime,
+        @Query("vehicle_type") String vehicleType
+    );
+
+    /**
+     * Create a new parking booking
+     */
+    @POST("api/v1/user/bookings")
+    Call<ApiResponse<ParkingBooking>> createBooking(@Body CreateBookingRequest request);
+
+    /**
+     * Get all bookings for the authenticated user
+     */
+    @GET("api/v1/user/bookings")
+    Call<ApiResponse<List<ParkingBooking>>> getBookings(@Query("status") String status);
+
+    /**
+     * Get upcoming bookings for the authenticated user
+     */
+    @GET("api/v1/user/bookings/upcoming")
+    Call<ApiResponse<List<ParkingBooking>>> getUpcomingBookings();
+
+    /**
+     * Cancel a booking
+     */
+    @DELETE("api/v1/user/bookings/{bookingId}")
+    Call<ApiResponse<Void>> cancelBooking(
+        @Path("bookingId") String bookingId,
+        @Query("reason") String reason
+    );
+
+    /**
+     * Check in against a booking
+     */
+    @POST("api/v1/user/bookings/{bookingId}/checkin")
+    Call<ApiResponse<BookingCheckInResponse>> checkinBooking(@Path("bookingId") String bookingId);
     
     /**
      * Generic API response wrapper

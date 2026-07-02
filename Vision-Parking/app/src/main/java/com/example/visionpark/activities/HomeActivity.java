@@ -141,6 +141,10 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         // Set up toolbar with hamburger icon
         setSupportActionBar(topAppBar);
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setHomeButtonEnabled(true);
+        }
         drawerToggle = new ActionBarDrawerToggle(this, drawerLayout, topAppBar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
         drawerLayout.addDrawerListener(drawerToggle);
         drawerToggle.syncState();
@@ -247,6 +251,16 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
         
         PerformanceMonitor.logMemoryUsage("HomeActivity onCreate end");
+    }
+    
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        Log.d("HomeActivity", "onOptionsItemSelected called for item ID: " + item.getItemId());
+        if (drawerToggle.onOptionsItemSelected(item)) {
+            Log.d("HomeActivity", "drawerToggle.onOptionsItemSelected handled it!");
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
     
     @Override

@@ -42,6 +42,11 @@ for i in $(seq 1 30); do
   echo "⏳ Waiting for package manager service ($i/30)..."
   sleep 5
 done
+echo "Checking if app-debug.apk exists..."
+if [ ! -f "app/build/outputs/apk/debug/app-debug.apk" ]; then
+  echo "🛠️ app-debug.apk not found. Compiling debug APK now..."
+  ./gradlew assembleDebug
+fi
 
 echo "Sleeping 10 seconds before install..."
 sleep 10
@@ -63,12 +68,12 @@ if [ $INSTALL_SUCCESS -ne 1 ]; then
   exit 1
 fi
 
-echo "Installing Appium globally..."
-npm install -g appium
-appium driver install uiautomator2
+echo "Installing Appium locally..."
+npm install appium --no-save
+npx appium driver install uiautomator2 >/dev/null 2>&1 || true
 
 echo "Starting Appium server..."
-nohup appium --base-path /wd/hub --log "$APPIUM_LOG_FILE" --log-level debug &
+nohup npx appium --base-path /wd/hub --log "$APPIUM_LOG_FILE" --log-level debug &
 APPIUM_PID=$!
 
 echo "Waiting for Appium to start..."
@@ -87,7 +92,7 @@ if ! nc -z 127.0.0.1 4723; then
 fi
 
 echo "Running Pytest E2E tests..."
-pytest tests \
+.venv/bin/pytest tests \
   -v \
   --maxfail=1 \
   --disable-warnings \

@@ -283,22 +283,37 @@
 
         </LinearLayout>
 
-        <!-- Park Vehicle Button -->
+        <!-- Park & Book Buttons -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@color/white"
             android:elevation="8dp"
+            android:orientation="horizontal"
             android:padding="16dp">
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnParkVehicle"
-                android:layout_width="match_parent"
+                android:layout_width="0dp"
                 android:layout_height="56dp"
-                android:text="Park Vehicle"
-                android:textSize="18sp"
+                android:layout_weight="1"
+                android:layout_marginEnd="8dp"
+                android:text="Park Now"
+                android:textSize="16sp"
                 android:textStyle="bold"
                 app:backgroundTint="@color/primary"
+                app:cornerRadius="12dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnBookSlot"
+                android:layout_width="0dp"
+                android:layout_height="56dp"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:text="Book Slot"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                app:backgroundTint="@color/green"
                 app:cornerRadius="12dp" />
 
         </LinearLayout>

@@ -20,9 +20,32 @@ import okhttp3.Response;
 
 public class ParkingApiService {
     private static final String TAG = "ParkingApiService";
-    private static final String BASE_URL = "http://10.0.2.2:5000"; // Android emulator localhost  
-    private static final String FALLBACK_URL = "http://10.0.2.2:80"; // Try nginx proxy as fallback
-    // For physical device, use your computer's IP: "http://192.168.1.XXX:5000"
+    private static String getBaseUrl() {
+        String url = com.example.visionpark.BuildConfig.BASE_URL;
+        if (url.endsWith("/")) {
+            url = url.substring(0, url.length() - 1);
+        }
+        return url;
+    }
+
+    private static String getPrimaryUrl() {
+        String base = getBaseUrl();
+        if (base.contains(":") && base.indexOf(":", 6) != -1) {
+            return base;
+        }
+        return base + ":5001";
+    }
+
+    private static String getFallbackUrl() {
+        String base = getBaseUrl();
+        if (base.contains(":") && base.indexOf(":", 6) != -1) {
+            return base;
+        }
+        return base + ":80";
+    }
+
+    private static final String BASE_URL = getPrimaryUrl();
+    private static final String FALLBACK_URL = getFallbackUrl();
     
     private final OkHttpClient client;
     private final Context context;
@@ -91,7 +114,7 @@ public class ParkingApiService {
     
     private void testUrl(String baseUrl, ConnectivityCallback callback) {
         Request request = new Request.Builder()
-                .url(baseUrl + "/")
+                .url(baseUrl + "/health")
                 .build();
         
         client.newCall(request).enqueue(new Callback() {

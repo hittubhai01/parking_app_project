@@ -147,7 +147,11 @@ public class SessionTrackingService extends Service {
         timer.start();
         
         // Start foreground service with notification
-        startForeground(NOTIFICATION_ID, createNotification());
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            startForeground(NOTIFICATION_ID, createNotification(), android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC);
+        } else {
+            startForeground(NOTIFICATION_ID, createNotification());
+        }
     }
     
     private void createNotificationChannel() {

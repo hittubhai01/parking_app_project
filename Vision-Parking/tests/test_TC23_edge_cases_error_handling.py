@@ -23,7 +23,7 @@ Expected Result:
 
 import time
 from appium.webdriver.common.appiumby import AppiumBy
-from tests.common import wait_for_element, assert_element_is_visible, is_element_visible
+from tests.common import wait_for_element, assert_element_is_visible, is_element_visible, handle_permission_dialog, open_drawer_and_navigate
 from tests.auth_helpers import login
 from tests.constants import REGISTER_EMAIL, REGISTER_PASSWORD
 import pytest
@@ -304,17 +304,13 @@ def test_duplicate_vehicle_registration_error(driver):
     time.sleep(1)
     login(driver, REGISTER_EMAIL, REGISTER_PASSWORD)
     time.sleep(3)
-    
-    # Step 2: Navigate to My Vehicles
-    burger_menu_locator = (AppiumBy.ACCESSIBILITY_ID, "Open navigation drawer")
-    wait_for_element(driver, burger_menu_locator).click()
-    time.sleep(1)
-    
-    my_vehicles_menu_item = (AppiumBy.XPATH, "//*[@text='My Vehicles']")
-    wait_for_element(driver, my_vehicles_menu_item).click()
+
+    handle_permission_dialog(driver, timeout=3)
     time.sleep(2)
     
-    # Step 3: Check if user already has vehicles
+    # Step 2: Navigate to My Vehicles
+    open_drawer_and_navigate(driver, 'nav_vehicles', 'My Vehicles')
+    time.sleep(2)
     vehicle_list = (AppiumBy.ID, 'rvVehicles')
     
     if is_element_visible(driver, vehicle_list, timeout=3):
@@ -393,6 +389,8 @@ def test_app_handles_server_errors_gracefully(driver):
     time.sleep(1)
     login(driver, REGISTER_EMAIL, REGISTER_PASSWORD)
     time.sleep(3)
+    handle_permission_dialog(driver, timeout=3)
+    time.sleep(2)
     
     # Step 2: Verify app loaded successfully
     map_fragment = (AppiumBy.ID, 'mapFragment')
@@ -439,6 +437,8 @@ def test_session_timeout_handling(driver):
     time.sleep(1)
     login(driver, REGISTER_EMAIL, REGISTER_PASSWORD)
     time.sleep(3)
+    handle_permission_dialog(driver, timeout=3)
+    time.sleep(2)
     
     # Step 2: Check if there are any old/long-running sessions
     sessions_nav_button = wait_for_element(driver, (AppiumBy.ID, 'nav_sessions'))
@@ -468,14 +468,12 @@ def test_rapid_button_clicks_handling(driver):
     time.sleep(1)
     login(driver, REGISTER_EMAIL, REGISTER_PASSWORD)
     time.sleep(3)
+
+    handle_permission_dialog(driver, timeout=3)
+    time.sleep(2)
     
     # Step 2: Navigate to vehicle addition
-    burger_menu_locator = (AppiumBy.ACCESSIBILITY_ID, "Open navigation drawer")
-    wait_for_element(driver, burger_menu_locator).click()
-    time.sleep(1)
-    
-    my_vehicles_menu_item = (AppiumBy.XPATH, "//*[@text='My Vehicles']")
-    wait_for_element(driver, my_vehicles_menu_item).click()
+    open_drawer_and_navigate(driver, 'nav_vehicles', 'My Vehicles')
     time.sleep(2)
     
     add_vehicle_button = wait_for_element(driver, (AppiumBy.ID, 'fabAddVehicle'))

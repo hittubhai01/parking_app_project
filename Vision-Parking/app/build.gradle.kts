@@ -83,3 +83,7 @@ dependencies {
     // SwipeRefreshLayout for pull-to-refresh functionality
     implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
 }
+
+tasks.withType<Test> {
+    maxParallelForks = Runtime.getRuntime().availableProcessors() / 2
+}

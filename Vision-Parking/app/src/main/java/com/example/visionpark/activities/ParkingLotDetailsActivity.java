@@ -13,6 +13,7 @@ import com.example.visionpark.R;
 import com.example.visionpark.models.ParkingLot;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.chip.Chip;
+import com.example.visionpark.utils.BookingDialogHelper;
 
 /**
  * Activity to display detailed information about a specific parking lot
@@ -35,6 +36,7 @@ public class ParkingLotDetailsActivity extends AppCompatActivity {
     private TextView tvFacilities;
     private Chip chipAvailabilityStatus;
     private MaterialButton btnParkVehicle;
+    private MaterialButton btnBookSlot;
     private ImageView ivBack;
     private CardView cardOperatingInfo;
     private CardView cardPricingInfo;
@@ -91,6 +93,7 @@ public class ParkingLotDetailsActivity extends AppCompatActivity {
         
         // Action button
         btnParkVehicle = findViewById(R.id.btnParkVehicle);
+        btnBookSlot = findViewById(R.id.btnBookSlot);
     }
     
     private void setupClickListeners() {
@@ -103,6 +106,15 @@ public class ParkingLotDetailsActivity extends AppCompatActivity {
             Intent intent = new Intent(this, VehicleListActivity.class);
             intent.putExtra(VehicleListActivity.EXTRA_PARKING_LOT, parkingLot);
             startActivity(intent);
+        });
+
+        btnBookSlot.setOnClickListener(v -> {
+            Log.d(TAG, "Book Slot button clicked for lot: " + parkingLot.getName());
+            BookingDialogHelper.showCreateBookingDialog(this, parkingLot, () -> {
+                Intent intent = new Intent(this, BookingsActivity.class);
+                startActivity(intent);
+                finish();
+            });
         });
     }
     
