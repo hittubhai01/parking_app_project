@@ -87,7 +87,7 @@ jobs:
       - name: Wait for backend API to be ready
         run: |
           for i in $(seq 1 30); do
-            if curl -s http://localhost:5000/health; then exit 0; fi
+            if curl -s http://localhost:5001/health; then exit 0; fi
             sleep 5
           done
           exit 1
