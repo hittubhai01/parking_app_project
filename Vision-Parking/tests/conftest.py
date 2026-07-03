@@ -30,6 +30,11 @@ def driver():
     options.set_capability('skipDeviceInitialization', False)
     options.set_capability('disableWindowAnimation', True)
     options.set_capability('skipLogcatCapture', True)
+    # Prevent 'cmd: Can't find service: settings' error on CI runners where
+    # the emulator's settings service is not yet available at session start
+    options.set_capability('ignoreHiddenApiPolicyError', True)
+    # Skip unlock screen interactions which can also fail on headless CI
+    options.set_capability('skipUnlock', True)
     options.no_reset = False
 
     driver = webdriver.Remote('http://127.0.0.1:4723/wd/hub', options=options)

@@ -141,6 +141,18 @@ jobs:
             echo "Waiting for package manager..."
             adb shell 'while ! pm list packages > /dev/null 2>&1; do sleep 1; done'
             
+            echo "Waiting for settings service (prevents Appium hidden_api_policy error)..."
+            for i in $(seq 1 60); do
+              if adb shell cmd settings get global hidden_api_policy > /dev/null 2>&1; then
+                echo "Settings service is ready after ${i}s"
+                break
+              fi
+              sleep 1
+            done
+            
+            echo "Extra stabilization wait for framework services..."
+            sleep 30
+            
             echo "Device ready, granting permissions..."
             adb shell pm grant $APP_PACKAGE android.permission.CAMERA || true
             adb shell pm grant $APP_PACKAGE android.permission.ACCESS_FINE_LOCATION || true
@@ -171,7 +183,7 @@ jobs:
             adb shell am force-stop $APP_PACKAGE
             
             echo "Running E2E tests..."
-            cd Vision-Parking && timeout 25m ./run_e2e.sh
+            cd Vision-Parking && timeout 60m ./run_e2e.sh
 
       - name: Upload test report
         uses: actions/upload-artifact@v4

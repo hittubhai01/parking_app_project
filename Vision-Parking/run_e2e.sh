@@ -106,7 +106,6 @@ fi
 
 $PYTEST_CMD tests \
   -v \
-  --maxfail=1 \
   --disable-warnings \
   --html="$TEST_REPORT_FILE" \
   --self-contained-html
