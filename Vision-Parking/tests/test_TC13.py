@@ -25,9 +25,8 @@ def test_bottom_nav_bar_navigation(driver):
     wait_for_element(driver, sessions_nav_locator).click()
     time.sleep(1) # Allow for screen transition
 
-    # A sessions screen might have a QR code scanner or a title.
-    # We will look for a title element containing "Session".
-    sessions_title_locator = (AppiumBy.XPATH, "//*[contains(@text, 'Session')]")
+    # A sessions screen has a unique summary TextView.
+    sessions_title_locator = (AppiumBy.ID, "tvSessionSummary")
     assert_element_is_visible(driver, sessions_title_locator)
 
     # --- 3. Navigate to Bookings and Verify ---
@@ -35,18 +34,20 @@ def test_bottom_nav_bar_navigation(driver):
     wait_for_element(driver, bookings_nav_locator).click()
     time.sleep(1)
 
-    # Verify the Bookings screen by looking for its unique title.
-    bookings_title_locator = (AppiumBy.XPATH, "//*[contains(@text, 'My Bookings')]")
-    assert_element_is_visible(driver, bookings_title_locator)
+    # Verify the Bookings screen by checking if the add booking FAB is visible.
+    bookings_fab_locator = (AppiumBy.ID, "fabAddBooking")
+    assert_element_is_visible(driver, bookings_fab_locator)
 
     # --- 4. Navigate to Profile and Verify ---
     profile_nav_locator = (AppiumBy.ID, "nav_profile")
     wait_for_element(driver, profile_nav_locator).click()
     time.sleep(1)
 
-    # Verify the Profile screen by looking for the user's email.
-    profile_email_locator = (AppiumBy.XPATH, f"//*[contains(@text, '{REGISTER_EMAIL}')]")
-    assert_element_is_visible(driver, profile_email_locator)
+    # Verify the Profile screen by looking for the user's email TextView.
+    profile_email_locator = (AppiumBy.ID, "tvProfileEmail")
+    email_elem = wait_for_element(driver, profile_email_locator)
+    assert REGISTER_EMAIL in email_elem.text
+
 
     # --- 5. Navigate back to Home and Verify ---
     home_nav_locator = (AppiumBy.ID, "nav_home")

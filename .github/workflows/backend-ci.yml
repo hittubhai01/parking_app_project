@@ -73,7 +73,7 @@ jobs:
         working-directory: ${{ env.BACKEND_DIR }}
         run: |
           python -m pip install --upgrade pip
-          pip install -r app/requirements.txt
+          pip install -r fastapi_app/requirements.txt
           pip install pytest pytest-html pytest-xdist coverage pytest-cov pytest-benchmark
 
       - name: Create test environment file
@@ -84,7 +84,6 @@ jobs:
           SECRET_KEY=test-secret-key-for-ci-${{ github.run_id }}
           JWT_SECRET_KEY=test-jwt-secret-for-ci-${{ github.run_id }}
           RPI_API_KEY=super-secret-rpi-key
-          FLASK_ENV=testing
           TESTING=True
           EOF
 
@@ -103,12 +102,11 @@ jobs:
           RPI_API_KEY: super-secret-rpi-key
         run: |
           python -c "
-          from app import create_app, db
-          app = create_app('testing')
-          with app.app_context():
-              db.drop_all()
-              db.create_all()
-              print('Database tables created successfully')
+          from fastapi_app.database import engine, Base
+          from fastapi_app import models
+          Base.metadata.drop_all(bind=engine)
+          Base.metadata.create_all(bind=engine)
+          print('Database tables created successfully')
           "
 
       # Run tests based on input type with proper step IDs
@@ -123,13 +121,13 @@ jobs:
           RPI_API_KEY: super-secret-rpi-key
         run: |
           python -m pytest \
-            tests/test_auth.py tests/test_parking.py tests/test_admin_api.py tests/test_config.py \
+            fastapi_app/tests/test_auth.py fastapi_app/tests/test_parking.py fastapi_app/tests/test_vehicles.py fastapi_app/tests/test_admin.py \
             -v \
             --tb=short \
             --junitxml=test-results/unit-tests.xml \
             --html=test-results/unit-tests.html \
             --self-contained-html \
-            --cov=app \
+            --cov=fastapi_app \
             --cov-report=html:test-results/coverage \
             --cov-report=xml:test-results/coverage.xml \
             -n auto
@@ -145,7 +143,7 @@ jobs:
           RPI_API_KEY: super-secret-rpi-key
         run: |
           python -m pytest \
-            tests/test_integration.py \
+            fastapi_app/tests/test_bookings.py fastapi_app/tests/test_payments.py fastapi_app/tests/test_sessions.py \
             -v \
             --tb=short \
             --junitxml=test-results/integration-tests.xml \
@@ -163,7 +161,7 @@ jobs:
           RPI_API_KEY: super-secret-rpi-key
         run: |
           python -m pytest \
-            tests/test_security.py tests/test_security_comprehensive.py \
+            fastapi_app/tests/test_auth.py \
             -v \
             --tb=short \
             --junitxml=test-results/security-tests.xml \
@@ -181,7 +179,7 @@ jobs:
           RPI_API_KEY: super-secret-rpi-key
         run: |
           python -m pytest \
-            tests/test_performance.py \
+            fastapi_app/tests/test_parking.py \
             -v \
             --tb=short \
             --junitxml=test-results/performance-tests.xml \
@@ -200,7 +198,7 @@ jobs:
           RPI_API_KEY: super-secret-rpi-key
         run: |
           python -m pytest \
-            tests/test_database_constraints.py tests/test_edge_cases.py tests/test_concurrency.py tests/test_error_recovery.py \
+            fastapi_app/tests/test_admin.py \
             -v \
             --tb=short \
             --junitxml=test-results/comprehensive-tests.xml \
@@ -220,7 +218,8 @@ jobs:
           RPI_API_KEY: super-secret-rpi-key
         run: |
           python -m pytest \
-            --cov=app \
+            fastapi_app/tests/ \
+            --cov=fastapi_app \
             --cov-report=html:test-results/coverage-all \
             --cov-report=xml:test-results/coverage-all.xml \
             --junitxml=test-results/all-tests.xml \
@@ -234,12 +233,13 @@ jobs:
         run: |
           pip install flake8 black isort bandit
           # Code formatting
-          black --check app/ tests/ --diff || echo "Code formatting issues found"
-          isort --check-only app/ tests/ || echo "Import sorting issues found"
+          black --check fastapi_app/ --diff || echo "Code formatting issues found"
+          isort --check-only fastapi_app/ || echo "Import sorting issues found"
           # Linting
-          flake8 app/ tests/ --max-line-length=120 --ignore=E203,W503,E501 || echo "Linting issues found"
+          flake8 fastapi_app/ --max-line-length=120 --ignore=E203,W503,E501 || echo "Linting issues found"
           # Security linting
-          bandit -r app/ -f html -o test-results/bandit-report.html || echo "Security issues found"
+          bandit -r fastapi_app/ -f html -o test-results/bandit-report.html || echo "Security issues found"
+
 
       # Upload coverage report artifact
       - name: Upload coverage report

@@ -2,6 +2,13 @@
 set -e
 
 # === Global config ===
+if [ -z "$ANDROID_HOME" ]; then
+  if [ -d "/Users/hiteshyadav/Library/Android/sdk" ]; then
+    export ANDROID_HOME="/Users/hiteshyadav/Library/Android/sdk"
+    export ANDROID_SDK_ROOT="/Users/hiteshyadav/Library/Android/sdk"
+    export PATH="$PATH:$ANDROID_HOME/emulator:$ANDROID_HOME/platform-tools"
+  fi
+fi
 export APPIUM_LOG_FILE="/tmp/appium.log"
 export TEST_REPORT_FILE="tests/report.html"
 
@@ -78,8 +85,8 @@ APPIUM_PID=$!
 
 echo "Waiting for Appium to start..."
 for i in {1..60}; do
-  if nc -z 127.0.0.1 4723; then
-    echo "✅ Appium is running"
+  if curl -s http://127.0.0.1:4723/wd/hub/status | grep -q "ready"; then
+    echo "✅ Appium is fully ready and responding"
     break
   fi
   sleep 1
@@ -92,7 +99,12 @@ if ! nc -z 127.0.0.1 4723; then
 fi
 
 echo "Running Pytest E2E tests..."
-.venv/bin/pytest tests \
+PYTEST_CMD="pytest"
+if [ -d ".venv" ]; then
+  PYTEST_CMD=".venv/bin/pytest"
+fi
+
+$PYTEST_CMD tests \
   -v \
   --maxfail=1 \
   --disable-warnings \

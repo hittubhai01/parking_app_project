@@ -18,8 +18,8 @@ def test_burger_menu_and_bottom_nav_lead_to_same_sessions_screen(driver):
     login(driver, REGISTER_EMAIL, REGISTER_PASSWORD)
     time.sleep(2) # Allow home screen to settle
 
-    # Define a reusable locator for the "Sessions" screen title
-    sessions_title_locator = (AppiumBy.XPATH, "//*[contains(@text, 'My Sessions')]")
+    # Define a reusable locator for the "Sessions" screen summary TextView
+    sessions_title_locator = (AppiumBy.ID, "tvSessionSummary")
 
     # --- 2. Navigate via Bottom Nav and Verify ---
     sessions_nav_locator = (AppiumBy.ID, "nav_sessions")

@@ -72,11 +72,11 @@ def test_session_details_refresh(driver):
     handle_permission_dialog(driver, timeout=3)
     time.sleep(2)
 
-    # Open drawer via swipe
-    size = driver.get_window_size()
-    driver.swipe(5, size['height'] // 2, int(size['width'] * 0.7), size['height'] // 2, 400)
+    # Open drawer via hamburger button
+    hamburger = wait_for_element(driver, (AppiumBy.ACCESSIBILITY_ID, "Open navigation drawer"), timeout=10)
+    hamburger.click()
     time.sleep(1.5)
-    print("✓ Navigation drawer opened via swipe")
+    print("✓ Navigation drawer opened via hamburger button")
 
     # Verify drawer is open by checking for a menu item
     nav_vehicles_visible = (

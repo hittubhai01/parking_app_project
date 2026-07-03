@@ -109,19 +109,15 @@ def test_vehicle_addition_success(driver):
     save_button.click()
     time.sleep(3)
 
-    # Step 8: Verify success (toast is optional — check vehicle in list instead)
-    success_locators = [
-        (AppiumBy.XPATH,
-         "//*[contains(@text, 'Vehicle registered') or "
-         "contains(@text, 'Vehicle added') or "
-         "contains(@text, 'Vehicle saved')]"),
-    ]
-    for loc in success_locators:
-        if is_element_visible(driver, loc, timeout=3):
-            print("✓ Success message displayed")
-            break
-    else:
-        print("⚠ Success toast not found, checking vehicle list")
+    # Step 8: Dismiss success dialog if it appears to return to the vehicle list
+    try:
+        ok_btn = wait_for_element(driver, (AppiumBy.XPATH, "//*[@text='OK' or @text='Ok']"), timeout=5)
+        ok_btn.click()
+        print("✓ Dismissed success dialog")
+        time.sleep(1.5)
+    except Exception as e:
+        print(f"⚠ Success dialog not found or could not be dismissed: {e}")
+
 
     # Step 9: Verify vehicle appears in the list
     time.sleep(2)

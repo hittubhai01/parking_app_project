@@ -525,6 +525,15 @@ def test_rapid_button_clicks_handling(driver):
     
     time.sleep(3)
     
+    # Dismiss success dialog to return to the vehicle list
+    try:
+        ok_btn = wait_for_element(driver, (AppiumBy.XPATH, "//*[@text='OK' or @text='Ok']"), timeout=5)
+        ok_btn.click()
+        print("✓ Dismissed success dialog")
+        time.sleep(1.5)
+    except Exception as e:
+        print(f"⚠ Success dialog not found or could not be dismissed: {e}")
+
     # Step 5: Verify only one vehicle was created
     # Count vehicles with the test registration number
     vehicle_with_reg = (AppiumBy.XPATH, f"//*[contains(@text, '{unique_reg}')]")

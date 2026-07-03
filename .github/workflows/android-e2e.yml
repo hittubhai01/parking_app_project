@@ -62,26 +62,26 @@ jobs:
           key: avd-${{ env.API_LEVEL }}-google_apis-x86_64
 
       - name: Clean up Docker Compose
-        run: docker compose down -v
+        run: docker compose -f docker-compose.fastapi.yml down -v
         working-directory: ./Backend
         if: always()
 
       - name: Start backend with Docker Compose
-        run: docker compose up -d
+        run: docker compose -f docker-compose.fastapi.yml up -d
         working-directory: ./Backend
 
       - name: Wait for database to be ready
         run: |
           for i in $(seq 1 30); do
-            if docker compose exec -T db pg_isready -U parking_user -d parking_db; then break; fi
+            if docker compose -f docker-compose.fastapi.yml exec -T db pg_isready -U parking_user -d parking_db; then break; fi
             sleep 5
           done
         working-directory: ./Backend
 
       - name: Setup database with seeding file
         run: |
-          docker cp COMPLETE_DATABASE_SETUP_FIXED.sql $(docker compose ps -q db):/setup.sql
-          docker compose exec -T db psql -U parking_user -d parking_db -f /setup.sql
+          docker cp COMPLETE_DATABASE_SETUP_FIXED.sql $(docker compose -f docker-compose.fastapi.yml ps -q db):/setup.sql
+          docker compose -f docker-compose.fastapi.yml exec -T db psql -U parking_user -d parking_db -f /setup.sql
         working-directory: ./Backend
 
       - name: Wait for backend API to be ready
@@ -96,7 +96,7 @@ jobs:
       - name: Verify database setup
         run: |
           echo "Verifying database tables and data..."
-          docker compose exec -T db psql -U parking_user -d parking_db -c "
+          docker compose -f docker-compose.fastapi.yml exec -T db psql -U parking_user -d parking_db -c "
             SELECT 
               (SELECT COUNT(*) FROM users) as users,
               (SELECT COUNT(*) FROM parkinglots_details) as parking_lots,
@@ -188,6 +188,6 @@ jobs:
         if: always()
 
       - name: Clean up Docker Compose
-        run: docker compose down -v
+        run: docker compose -f docker-compose.fastapi.yml down -v
         working-directory: ./Backend
         if: always()

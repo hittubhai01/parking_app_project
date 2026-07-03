@@ -20,9 +20,10 @@ def test_burger_menu_opens_and_closes(driver):
     # 1. Log in
     wait_for_element(driver, (AppiumBy.ID, 'btnGetStarted')).click()
     login(driver, REGISTER_EMAIL, REGISTER_PASSWORD)
-    time.sleep(3)
 
-    handle_permission_dialog(driver, timeout=3)
+    # Wait for map fragment to settle the Home screen UI
+    map_locator = (AppiumBy.ID, "mapFragment")
+    assert_element_is_visible(driver, map_locator)
     time.sleep(2)
 
     # 2. Open the drawer using the hamburger button
@@ -30,29 +31,45 @@ def test_burger_menu_opens_and_closes(driver):
     hamburger.click()
     time.sleep(1.5)
 
-    # 3. Verify the drawer is open — look for 'My Vehicles' text using UiSelector
-    try:
-        my_vehicles = WebDriverWait(driver, 5).until(
-            EC.presence_of_element_located((AppiumBy.ANDROID_UIAUTOMATOR, 'new UiSelector().text("My Vehicles")'))
-        )
-        assert my_vehicles.is_displayed(), "Navigation drawer did not open — 'My Vehicles' item not visible"
-    except Exception as e:
-        pytest.fail(f"Navigation drawer did not open successfully: {e}")
+    # 3. Verify the drawer is open by looking for the 'My Vehicles' item
+    drawer_opened = False
+    for locator in [
+        (AppiumBy.ANDROID_UIAUTOMATOR, 'new UiSelector().text("My Vehicles")'),
+        (AppiumBy.XPATH, "//*[@text='My Vehicles']"),
+        (AppiumBy.ID, "com.example.visionpark:id/nav_vehicles"),
+        (AppiumBy.ID, "nav_vehicles")
+    ]:
+        try:
+            elem = WebDriverWait(driver, 5).until(EC.presence_of_element_located(locator))
+            if elem.is_displayed():
+                drawer_opened = True
+                break
+        except Exception:
+            continue
 
+    assert drawer_opened, "Navigation drawer did not open — 'My Vehicles' item not visible"
     print("✓ Navigation drawer opened successfully")
 
     # 4. Close the drawer via Android back key
     driver.press_keycode(4)
     time.sleep(1.5)
 
-    # 5. Verify the drawer is closed — 'My Vehicles' text should not be visible or present
-    is_closed = False
-    try:
-        item = driver.find_element(AppiumBy.ANDROID_UIAUTOMATOR, 'new UiSelector().text("My Vehicles")')
-        is_closed = not item.is_displayed()
-    except Exception:
-        # NoSuchElementException means it's not present (closed/destroyed/not visible)
-        is_closed = True
+    # 5. Verify the drawer is closed — 'My Vehicles' should not be visible or present
+    is_closed = True
+    for locator in [
+        (AppiumBy.ANDROID_UIAUTOMATOR, 'new UiSelector().text("My Vehicles")'),
+        (AppiumBy.XPATH, "//*[@text='My Vehicles']"),
+        (AppiumBy.ID, "com.example.visionpark:id/nav_vehicles"),
+        (AppiumBy.ID, "nav_vehicles")
+    ]:
+        try:
+            item = driver.find_element(*locator)
+            if item.is_displayed():
+                is_closed = False
+                break
+        except Exception:
+            pass
 
     assert is_closed, "The navigation drawer did not close correctly."
     print("✓ Navigation drawer opened and closed correctly")
+

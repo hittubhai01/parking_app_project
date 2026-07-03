@@ -149,6 +149,8 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
         drawerLayout.addDrawerListener(drawerToggle);
         drawerToggle.syncState();
 
+
+
         // Set username in drawer header
         View headerView = navigationView.getHeaderView(0);
         TextView tvUserName = headerView.findViewById(R.id.tvUserName);
@@ -256,11 +258,24 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         Log.d("HomeActivity", "onOptionsItemSelected called for item ID: " + item.getItemId());
+        if (item.getItemId() == android.R.id.home) {
+            drawerLayout.openDrawer(androidx.core.view.GravityCompat.START);
+            return true;
+        }
         if (drawerToggle.onOptionsItemSelected(item)) {
             Log.d("HomeActivity", "drawerToggle.onOptionsItemSelected handled it!");
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (drawerLayout != null && drawerLayout.isDrawerOpen(androidx.core.view.GravityCompat.START)) {
+            drawerLayout.closeDrawer(androidx.core.view.GravityCompat.START);
+        } else {
+            super.onBackPressed();
+        }
     }
     
     @Override
