@@ -17,7 +17,7 @@ def driver():
     options.device_name = 'Android Emulator'
     options.app_package = 'com.example.visionpark'
     options.app_activity = 'com.example.visionpark.activities.SplashScreenActivity'
-    options.implicit_wait_timeout = 15000
+    options.implicit_wait_timeout = 30000
     
     # Extended timeouts for CI environment
     options.set_capability('uiautomator2ServerInstallTimeout', 180000)  # 3 minutes

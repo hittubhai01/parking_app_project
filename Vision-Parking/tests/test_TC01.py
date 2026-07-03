@@ -5,7 +5,7 @@ from appium.webdriver.common.appiumby import AppiumBy
 
 
 def test_app_launch(driver):
-    time.sleep(5)  # Give more time for app to fully load
+    time.sleep(15)  # Give extra time for slow CI emulator (no KVM / SwiftShader)
     
     # Debug: Print current activity and page source
     try:
@@ -39,12 +39,12 @@ def test_app_launch(driver):
     # Try to find the app name element with more flexible approach
     app_name = None
     try:
-        # Try original ID
-        app_name = wait_for_element(driver, (AppiumBy.ID, 'tvAppName'), timeout=5)
+        # Try original ID with long timeout for slow CI
+        app_name = wait_for_element(driver, (AppiumBy.ID, 'tvAppName'), timeout=60)
     except:
         try:
             # Try with full resource ID
-            app_name = wait_for_element(driver, (AppiumBy.ID, 'com.example.visionpark:id/tvAppName'), timeout=5)
+            app_name = wait_for_element(driver, (AppiumBy.ID, 'com.example.visionpark:id/tvAppName'), timeout=30)
         except:
             try:
                 # Try to find by text content
@@ -63,10 +63,10 @@ def test_app_launch(driver):
     # Try to find get started button with flexible approach
     get_started_btn = None
     try:
-        get_started_btn = wait_for_element(driver, (AppiumBy.ID, 'btnGetStarted'), timeout=5)
+        get_started_btn = wait_for_element(driver, (AppiumBy.ID, 'btnGetStarted'), timeout=60)
     except:
         try:
-            get_started_btn = wait_for_element(driver, (AppiumBy.ID, 'com.example.visionpark:id/btnGetStarted'), timeout=5)
+            get_started_btn = wait_for_element(driver, (AppiumBy.ID, 'com.example.visionpark:id/btnGetStarted'), timeout=30)
         except:
             try:
                 get_started_btn = driver.find_element(AppiumBy.XPATH, "//*[contains(@text, 'Get Started') or contains(@text, 'START') or contains(@text, 'Begin')]")
@@ -82,12 +82,12 @@ def test_app_launch(driver):
         get_started_btn.click()
 
     # Wait for login screen
-    time.sleep(3)
+    time.sleep(5)
     try:
-        wait_for_element(driver, (AppiumBy.ID, 'btnLogin'), timeout=10)
+        wait_for_element(driver, (AppiumBy.ID, 'btnLogin'), timeout=60)
     except:
         try:
-            wait_for_element(driver, (AppiumBy.ID, 'com.example.visionpark:id/btnLogin'), timeout=5)
+            wait_for_element(driver, (AppiumBy.ID, 'com.example.visionpark:id/btnLogin'), timeout=30)
         except:
             # Print current state after click
             try:
