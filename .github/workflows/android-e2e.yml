@@ -188,8 +188,8 @@ jobs:
             echo "Stopping app before tests..."
             adb shell am force-stop $APP_PACKAGE
             
-            # echo "Running E2E tests..."
-            # cd Vision-Parking && timeout 100m ./run_e2e.sh
+            echo "Running E2E tests..."
+            cd Vision-Parking && timeout 100m ./run_e2e.sh
 
 
 
