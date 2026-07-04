@@ -195,7 +195,7 @@ jobs:
         bandit -r app/ -f html -o test-results/bandit-report.html
 
     - name: Upload backend test results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: backend-test-results
@@ -285,7 +285,7 @@ jobs:
         npm test -- --coverage --watchAll=false || echo "Unit tests completed"
 
     - name: Upload frontend test results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: frontend-test-results
@@ -584,7 +584,7 @@ jobs:
         kill $(cat app.pid)
 
     - name: Upload performance test results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: performance-test-results
