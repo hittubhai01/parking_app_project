@@ -10,17 +10,22 @@ cd "$(dirname "$0")"
 echo ">>> Working directory: $PWD"
 
 # ── Install / verify Appium ──────────────────────────────────
-if ! command -v appium > /dev/null 2>&1; then
-  echo ">>> Installing Appium globally..."
-  npm install -g appium@2.11.3
+if command -v appium > /dev/null 2>&1; then
+  APPIUM_CMD="appium"
+elif [ -f "node_modules/.bin/appium" ]; then
+  APPIUM_CMD="npx appium"
+else
+  echo ">>> Installing Appium locally..."
+  npm install appium@2.11.3 --no-save
+  APPIUM_CMD="npx appium"
 fi
 
 echo ">>> Installing uiautomator2 driver..."
-appium driver install uiautomator2 || appium driver update uiautomator2 || true
+$APPIUM_CMD driver install uiautomator2 || $APPIUM_CMD driver update uiautomator2 || true
 
 # ── Start Appium ─────────────────────────────────────────────
 echo ">>> Starting Appium server..."
-appium server \
+$APPIUM_CMD server \
   --base-path /wd/hub \
   --log "$APPIUM_LOG_FILE" \
   --log-level info \
