@@ -2,7 +2,7 @@ import pytest
 from appium.webdriver.common.appiumby import AppiumBy
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from tests.common import wait_for_element
+from tests.common import wait_for_element, get_timeout
 
 def test_login_with_empty_credentials(driver):
     """
@@ -25,7 +25,7 @@ def test_login_with_empty_credentials(driver):
         toast_locator = (AppiumBy.XPATH, "//android.widget.Toast")
 
         # Wait up to 10 seconds for the toast to appear
-        toast_element = WebDriverWait(driver, 10).until(
+        toast_element = WebDriverWait(driver, get_timeout(10)).until(
             EC.presence_of_element_located(toast_locator)
         )
 

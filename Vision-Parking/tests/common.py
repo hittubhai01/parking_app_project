@@ -1,9 +1,18 @@
 import time
+import os
 import pytest
 from appium.webdriver.common.appiumby import AppiumBy
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
+
+# Automatically scale timeouts in slow CI environments (No KVM acceleration)
+IS_CI = os.environ.get("CI") == "true" or os.environ.get("GITHUB_ACTIONS") == "true"
+TIMEOUT_SCALE = 3.0 if IS_CI else 1.0
+
+def get_timeout(base_timeout):
+    """Scale timeout dynamically based on CI environment."""
+    return int(base_timeout * TIMEOUT_SCALE)
 
 def fill_registration_form(driver, name, email, password, phone, address):
     wait_for_element(driver, (AppiumBy.ID, 'etName')).send_keys(name)
@@ -12,11 +21,14 @@ def fill_registration_form(driver, name, email, password, phone, address):
     wait_for_element(driver, (AppiumBy.ID, 'etPhone')).send_keys(phone)
     wait_for_element(driver, (AppiumBy.ID, 'etAddress')).send_keys(address)
 
-def wait_for_element(driver, locator, timeout=10):
+def wait_for_element(driver, locator, timeout=None):
+    if timeout is None:
+        timeout = get_timeout(10)
     try:
         return WebDriverWait(driver, timeout).until(
             EC.presence_of_element_located(locator)
         )
+
     except TimeoutException:
         pytest.fail(f"Timeout: Element {locator} not found after {timeout} seconds.")
     except NoSuchElementException:
@@ -84,7 +96,7 @@ def open_drawer_and_navigate(driver, menu_item_id, menu_item_text=None):
 
     # Step 1: Click the hamburger button
     try:
-        hamburger = WebDriverWait(driver, 15).until(
+        hamburger = WebDriverWait(driver, get_timeout(15)).until(
             EC.presence_of_element_located(
                 (AppiumBy.ACCESSIBILITY_ID, "Open navigation drawer")
             )
@@ -100,7 +112,7 @@ def open_drawer_and_navigate(driver, menu_item_id, menu_item_text=None):
     # Step 2: Find menu item by text using UiAutomator2 (works for NavigationMenuItemView)
     # This is more reliable than resource ID for NavigationView menu items
     try:
-        item = WebDriverWait(driver, 8).until(
+        item = WebDriverWait(driver, get_timeout(8)).until(
             EC.presence_of_element_located((
                 AppiumBy.ANDROID_UIAUTOMATOR,
                 f'new UiSelector().text("{text_to_search}")'
@@ -114,7 +126,7 @@ def open_drawer_and_navigate(driver, menu_item_id, menu_item_text=None):
 
     # Step 3: Fallback — try XPath text
     try:
-        item = WebDriverWait(driver, 5).until(
+        item = WebDriverWait(driver, get_timeout(5)).until(
             EC.presence_of_element_located((
                 AppiumBy.XPATH,
                 f"//*[@text='{text_to_search}']"
@@ -136,7 +148,7 @@ def open_drawer_and_navigate(driver, menu_item_id, menu_item_text=None):
         
         for pid in possible_ids:
             try:
-                item = WebDriverWait(driver, 3).until(
+                item = WebDriverWait(driver, get_timeout(3)).until(
                     EC.presence_of_element_located((AppiumBy.ID, pid))
                 )
                 item.click()
@@ -166,7 +178,7 @@ def assert_validation_message(driver, expected_msgs):
     found = False
     for msg in expanded_msgs:
         try:
-            toast = WebDriverWait(driver, 10, poll_frequency=0.2).until(
+            toast = WebDriverWait(driver, get_timeout(10), poll_frequency=0.2).until(
                 lambda d: d.find_element(
                     AppiumBy.ANDROID_UIAUTOMATOR,
                     f'new UiSelector().textContains("{msg}")'
@@ -189,11 +201,13 @@ def assert_element_is_visible(driver, locator):
     element = wait_for_element(driver, locator)
     assert element.is_displayed(), f"Element '{locator}' was found but is not visible."
 
-def is_element_visible(driver, locator, timeout=5):
+def is_element_visible(driver, locator, timeout=None):
     """
     Checks if an element is visible without failing the test.
     Returns True if the element is found and visible, False otherwise.
     """
+    if timeout is None:
+        timeout = get_timeout(5)
     try:
         WebDriverWait(driver, timeout).until(
             EC.visibility_of_element_located(locator)

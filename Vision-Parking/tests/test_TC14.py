@@ -1,5 +1,5 @@
 from appium.webdriver.common.appiumby import AppiumBy
-from tests.common import wait_for_element, assert_element_is_visible, is_element_visible, handle_permission_dialog
+from tests.common import wait_for_element, assert_element_is_visible, is_element_visible, handle_permission_dialog, get_timeout
 from tests.auth_helpers import login
 from tests.constants import REGISTER_EMAIL, REGISTER_PASSWORD
 import time
@@ -40,7 +40,7 @@ def test_burger_menu_opens_and_closes(driver):
         (AppiumBy.ID, "nav_vehicles")
     ]:
         try:
-            elem = WebDriverWait(driver, 5).until(EC.presence_of_element_located(locator))
+            elem = WebDriverWait(driver, get_timeout(5)).until(EC.presence_of_element_located(locator))
             if elem.is_displayed():
                 drawer_opened = True
                 break
