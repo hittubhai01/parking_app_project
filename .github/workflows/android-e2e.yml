@@ -61,10 +61,18 @@ jobs:
             ~/.android/avd/*.ini
           key: avd-${{ env.API_LEVEL }}-google_apis-x86_64
 
+      - name: Free port 80
+        run: |
+          sudo systemctl stop nginx || true
+          sudo systemctl stop apache2 || true
+          sudo killall apache2 || true
+          sudo killall nginx || true
+
       - name: Clean up Docker Compose
         run: docker compose -f docker-compose.fastapi.yml down -v
         working-directory: ./Backend
         if: always()
+
 
       - name: Start backend with Docker Compose
         run: docker compose -f docker-compose.fastapi.yml up -d db app nginx
@@ -130,7 +138,8 @@ jobs:
           profile: Nexus 5
           ram-size: 2048M
           heap-size: 512M
-          emulator-options: -no-window -no-audio -no-boot-anim -no-snapshot -memory 2048 -wipe-data -partition-size 8192 -gpu swiftshader_indirect -camera-back none -camera-front none
+          emulator-options: -no-window -no-audio -no-boot-anim -no-snapshot -no-snapshot-save -no-sim -memory 2048 -wipe-data -partition-size 8192 -gpu swiftshader_indirect -camera-back none -camera-front none
+
 
           disable-animations: true
           script: |
