@@ -170,3 +170,7 @@ test-results/
 playwright-report/
 playwright/.cache/
 playwright.config.ts-temp*
+# Runtime logs
+nohup.out
+*.log
+/tmp/
