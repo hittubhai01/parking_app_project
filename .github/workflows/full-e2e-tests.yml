@@ -29,7 +29,7 @@ on:
           - production
 
 env:
-  NODE_VERSION: '18'
+  NODE_VERSION: '20'
   PYTHON_VERSION: '3.12'
   POSTGRES_VERSION: '15'
   BACKEND_DIR: 'Backend'
