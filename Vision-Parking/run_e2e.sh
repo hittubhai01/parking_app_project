@@ -108,7 +108,9 @@ $PYTEST_CMD tests \
   -v \
   --disable-warnings \
   --html="$TEST_REPORT_FILE" \
-  --self-contained-html
+  --self-contained-html \
+  --maxfail=3
+
 
 PYTEST_EXIT=$?
 

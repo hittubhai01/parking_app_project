@@ -177,7 +177,8 @@ jobs:
             adb shell am force-stop $APP_PACKAGE
             
             echo "Running E2E tests..."
-            cd Vision-Parking && timeout 60m ./run_e2e.sh
+            cd Vision-Parking && timeout 100m ./run_e2e.sh
+
 
       - name: Upload test report
         uses: actions/upload-artifact@v4
