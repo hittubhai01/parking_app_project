@@ -11,6 +11,13 @@ def driver():
     except Exception:
         pass
 
+    # Clear app data to guarantee 100% clean logged-out state for every test case
+    try:
+        os.system("adb shell pm clear com.example.visionpark")
+    except Exception:
+        pass
+
+
     options = UiAutomator2Options()
     options.platform_name = 'Android'
     options.automation_name = 'UiAutomator2'
