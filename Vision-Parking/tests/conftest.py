@@ -53,11 +53,17 @@ def reset_app_state(driver):
     except Exception:
         pass
 
-    # Clear app data to guarantee 100% clean logged-out state
+    # Clear app data natively (speeds up reset and prevents ADB hangs)
     try:
-        os.system("adb shell pm clear com.example.visionpark")
+        driver.execute_script('mobile: clearApp', {'appId': 'com.example.visionpark'})
+        time.sleep(1.5)
     except Exception:
-        pass
+        # Fallback to adb shell pm clear if native script is unsupported
+        try:
+            os.system("adb shell pm clear com.example.visionpark")
+            time.sleep(2.0)
+        except Exception:
+            pass
 
     # Activate the app fresh on the splash screen
     try:

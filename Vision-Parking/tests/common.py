@@ -37,8 +37,8 @@ def wait_for_element(driver, locator, timeout=None):
         pytest.fail(str(e))
 
 def handle_permission_dialog(driver, timeout=5):
-    # Temporarily set a low implicit wait to prevent list scanning from blocking on missing IDs
-    driver.implicitly_wait(0.5)
+    # Temporarily set a 0 implicit wait to prevent list scanning from blocking on missing IDs
+    driver.implicitly_wait(0.0)
 
     allow_button_ids = [
         'com.android.permissioncontroller:id/permission_allow_button',
