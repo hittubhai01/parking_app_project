@@ -136,9 +136,10 @@ jobs:
           target: google_apis
           arch: x86_64
           profile: Nexus 5
-          ram-size: 2048M
-          heap-size: 512M
-          emulator-options: -no-window -no-audio -no-boot-anim -no-snapshot -no-snapshot-save -no-sim -memory 2048 -wipe-data -partition-size 8192 -gpu swiftshader_indirect -camera-back none -camera-front none
+          ram-size: 3072M
+          heap-size: 768M
+          emulator-options: -no-window -no-audio -no-boot-anim -no-snapshot -no-snapshot-save -no-sim -memory 3072 -wipe-data -partition-size 8192 -gpu swiftshader_indirect -camera-back none -camera-front none
+
 
 
           disable-animations: true
