@@ -190,7 +190,6 @@ jobs:
             
             # echo "Running E2E tests..."
             # cd Vision-Parking && timeout 100m ./run_e2e.sh
-            echo "Skipping E2E tests execution (Alternative 2)"
 
 
 
