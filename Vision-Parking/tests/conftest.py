@@ -1,22 +1,16 @@
 import os
 import pytest
+import time
 from appium import webdriver
 from appium.options.android import UiAutomator2Options
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="session")
 def driver():
     # Collapse statusbar/notification shade to prevent covering the UI
     try:
         os.system("adb shell cmd statusbar collapse")
     except Exception:
         pass
-
-    # Clear app data to guarantee 100% clean logged-out state for every test case
-    try:
-        os.system("adb shell pm clear com.example.visionpark")
-    except Exception:
-        pass
-
 
     options = UiAutomator2Options()
     options.platform_name = 'Android'
@@ -37,13 +31,40 @@ def driver():
     options.set_capability('skipDeviceInitialization', False)
     options.set_capability('disableWindowAnimation', True)
     options.set_capability('skipLogcatCapture', True)
-    # Prevent 'cmd: Can't find service: settings' error on CI runners where
-    # the emulator's settings service is not yet available at session start
     options.set_capability('ignoreHiddenApiPolicyError', True)
-    # Skip unlock screen interactions which can also fail on headless CI
     options.set_capability('skipUnlock', True)
     options.no_reset = False
 
     driver = webdriver.Remote('http://127.0.0.1:4723/wd/hub', options=options)
     yield driver
     driver.quit()
+
+@pytest.fixture(scope="function", autouse=True)
+def reset_app_state(driver):
+    # Collapse statusbar/notification shade before test starts
+    try:
+        os.system("adb shell cmd statusbar collapse")
+    except Exception:
+        pass
+
+    # Stop the app to make sure it is not running
+    try:
+        driver.terminate_app('com.example.visionpark')
+    except Exception:
+        pass
+
+    # Clear app data to guarantee 100% clean logged-out state
+    try:
+        os.system("adb shell pm clear com.example.visionpark")
+    except Exception:
+        pass
+
+    # Activate the app fresh on the splash screen
+    try:
+        driver.activate_app('com.example.visionpark')
+    except Exception:
+        pass
+    
+    # Give a tiny sleep to let the splash screen load
+    time.sleep(2)
+
