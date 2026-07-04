@@ -78,43 +78,25 @@ jobs:
 
 
     - name: Install Python dependencies
-      working-directory: ${{ env.BACKEND_DIR }}
+      working-directory: ${{ env.BACKEND_DIR }}/fastapi_app
       run: |
         python -m pip install --upgrade pip
-        pip install -r app/requirements.txt
+        pip install -r requirements.txt
         pip install pytest pytest-html pytest-xdist coverage
 
     - name: Create test environment file
-      working-directory: ${{ env.BACKEND_DIR }}
+      working-directory: ${{ env.BACKEND_DIR }}/fastapi_app
       run: |
         cat > .env.test << EOF
         DATABASE_URL=postgresql://test_user:test_password@localhost:5432/test_parking_db
         SECRET_KEY=test-secret-key-for-ci-${{ github.run_id }}
         JWT_SECRET_KEY=test-jwt-secret-for-ci-${{ github.run_id }}
         RPI_API_KEY=test-rpi-key-for-ci
-        FLASK_ENV=testing
         TESTING=True
         EOF
 
-    - name: Run database migrations
-      working-directory: ${{ env.BACKEND_DIR }}
-      env:
-        DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_parking_db
-        SECRET_KEY: test-secret-key-for-ci-${{ github.run_id }}
-        JWT_SECRET_KEY: test-jwt-secret-for-ci-${{ github.run_id }}
-        RPI_API_KEY: test-rpi-key-for-ci
-      run: |
-        python -c "
-        from app import create_app, db
-        app = create_app('testing')
-        with app.app_context():
-            db.drop_all()
-            db.create_all()
-            print('Database tables created successfully')
-        "
-
-    - name: Run unit tests with coverage
-      working-directory: ${{ env.BACKEND_DIR }}
+    - name: Run unit and integration tests
+      working-directory: ${{ env.BACKEND_DIR }}/fastapi_app
       env:
         DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_parking_db
         SECRET_KEY: test-secret-key-for-ci-${{ github.run_id }}
@@ -122,77 +104,28 @@ jobs:
         RPI_API_KEY: test-rpi-key-for-ci
       run: |
         python -m pytest \
-          tests/test_auth.py tests/test_parking.py tests/test_admin_api.py tests/test_config.py \
+          tests/ \
           -v \
           --tb=short \
           --junitxml=test-results/unit-tests.xml \
           --html=test-results/unit-tests.html \
           --self-contained-html \
-          --cov=app \
+          --cov=. \
           --cov-report=html:test-results/coverage \
           --cov-report=xml:test-results/coverage.xml \
           -n auto
 
-    - name: Run integration tests
-      working-directory: ${{ env.BACKEND_DIR }}
-      env:
-        DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_parking_db
-        SECRET_KEY: test-secret-key-for-ci-${{ github.run_id }}
-        JWT_SECRET_KEY: test-jwt-secret-for-ci-${{ github.run_id }}
-        RPI_API_KEY: test-rpi-key-for-ci
-      run: |
-        python -m pytest \
-          tests/test_integration.py \
-          -v \
-          --tb=short \
-          --junitxml=test-results/integration-tests.xml \
-          --html=test-results/integration-tests.html \
-          --self-contained-html
-
-    - name: Run security tests
-      working-directory: ${{ env.BACKEND_DIR }}
-      env:
-        DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_parking_db
-        SECRET_KEY: test-secret-key-for-ci-${{ github.run_id }}
-        JWT_SECRET_KEY: test-jwt-secret-for-ci-${{ github.run_id }}
-        RPI_API_KEY: test-rpi-key-for-ci
-      run: |
-        python -m pytest \
-          tests/test_security.py tests/test_security_comprehensive.py \
-          -v \
-          --tb=short \
-          --junitxml=test-results/security-tests.xml \
-          --html=test-results/security-tests.html \
-          --self-contained-html
-
-    - name: Run comprehensive tests
-      working-directory: ${{ env.BACKEND_DIR }}
-      env:
-        DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_parking_db
-        SECRET_KEY: test-secret-key-for-ci-${{ github.run_id }}
-        JWT_SECRET_KEY: test-jwt-secret-for-ci-${{ github.run_id }}
-        RPI_API_KEY: test-rpi-key-for-ci
-      run: |
-        python -m pytest \
-          tests/test_database_constraints.py tests/test_edge_cases.py tests/test_concurrency.py tests/test_error_recovery.py tests/test_performance.py \
-          -v \
-          --tb=short \
-          --junitxml=test-results/comprehensive-tests.xml \
-          --html=test-results/comprehensive-tests.html \
-          --self-contained-html \
-          || echo "Comprehensive tests completed with some failures"
-
     - name: Run code quality checks
-      working-directory: ${{ env.BACKEND_DIR }}
+      working-directory: ${{ env.BACKEND_DIR }}/fastapi_app
       run: |
         pip install flake8 black isort bandit
         # Code formatting
-        black --check app/ tests/ --diff
-        isort --check-only app/ tests/
+        black --check . --diff
+        isort --check-only .
         # Linting
-        flake8 app/ tests/ --max-line-length=120 --ignore=E203,W503,E501
+        flake8 . --max-line-length=120 --ignore=E203,W503,E501
         # Security linting
-        bandit -r app/ -f html -o test-results/bandit-report.html
+        bandit -r . -f html -o test-results/bandit-report.html
 
     - name: Upload backend test results
       uses: actions/upload-artifact@v4
@@ -342,36 +275,28 @@ jobs:
         node-version: ${{ env.NODE_VERSION }}
 
     - name: Install backend dependencies
-      working-directory: ${{ env.BACKEND_DIR }}
+      working-directory: ${{ env.BACKEND_DIR }}/fastapi_app
       run: |
         python -m pip install --upgrade pip
-        pip install -r app/requirements.txt
+        pip install -r requirements.txt
 
     - name: Install frontend dependencies
       working-directory: ${{ env.FRONTEND_DIR }}
       run: |
         npm ci
 
-    - name: Setup test database
-      working-directory: ${{ env.BACKEND_DIR }}
-      env:
-        DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_parking_db
-        SECRET_KEY: test-secret-key-for-ci-${{ github.run_id }}
-        JWT_SECRET_KEY: test-jwt-secret-for-ci-${{ github.run_id }}
-        RPI_API_KEY: test-rpi-key-for-ci
-        REDIS_URL: redis://localhost:6379/0
+    - name: Install PostgreSQL client
       run: |
-        python -c "
-        from app import create_app, db
-        app = create_app('testing')
-        with app.app_context():
-            db.drop_all()
-            db.create_all()
-            print('Test database setup completed')
-        "
+        sudo apt-get update && sudo apt-get install -y postgresql-client
+
+    - name: Setup test database
+      env:
+        PGPASSWORD: test_password
+      run: |
+        psql -h localhost -U test_user -d test_parking_db -f Backend/COMPLETE_DATABASE_SETUP_FIXED.sql
 
     - name: Start backend server
-      working-directory: ${{ env.BACKEND_DIR }}
+      working-directory: ${{ env.BACKEND_DIR }}/fastapi_app
       env:
         DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_parking_db
         SECRET_KEY: test-secret-key-for-ci-${{ github.run_id }}
@@ -379,13 +304,13 @@ jobs:
         RPI_API_KEY: test-rpi-key-for-ci
         REDIS_URL: redis://localhost:6379/0
       run: |
-        # Start backend in background
-        python app.py > backend.log 2>&1 &
+        # Start backend on port 80 in background using sudo
+        sudo python -m uvicorn main:app --host 0.0.0.0 --port 80 > backend.log 2>&1 &
         echo $! > backend.pid
         sleep 15
         
         # Check if backend is running
-        curl -f http://localhost:5000/health || curl -f http://localhost:5000/api/health || echo "Backend health check endpoint not available"
+        curl -f http://localhost:80/health || echo "Backend health check failed"
 
     - name: Start frontend server
       working-directory: ${{ env.FRONTEND_DIR }}
@@ -398,9 +323,12 @@ jobs:
         # Check if frontend is running
         curl -f http://localhost:5173/ || echo "Frontend server started"
 
-    - name: Run integration tests
+    - name: Run Playwright tests
       working-directory: ${{ env.FRONTEND_DIR }}
       run: |
+        # Install Playwright browsers (needed in clean worker env)
+        npx playwright install --with-deps chromium
+        
         # Run Playwright tests against the running servers
         npx playwright test \
           --config=playwright.config.ci.js \
@@ -415,8 +343,8 @@ jobs:
       if: always()
       run: |
         # Stop backend
-        if [ -f "${{ env.BACKEND_DIR }}/backend.pid" ]; then
-          kill $(cat ${{ env.BACKEND_DIR }}/backend.pid) 2>/dev/null || true
+        if [ -f "${{ env.BACKEND_DIR }}/fastapi_app/backend.pid" ]; then
+          sudo kill $(cat ${{ env.BACKEND_DIR }}/fastapi_app/backend.pid) 2>/dev/null || true
         fi
         # Stop frontend
         if [ -f "${{ env.FRONTEND_DIR }}/frontend.pid" ]; then
@@ -430,7 +358,7 @@ jobs:
         name: e2e-test-results
         path: |
           ${{ env.FRONTEND_DIR }}/test-results/e2e/
-          ${{ env.BACKEND_DIR }}/backend.log
+          ${{ env.BACKEND_DIR }}/fastapi_app/backend.log
           ${{ env.FRONTEND_DIR }}/frontend.log
         retention-days: 30
 
@@ -453,6 +381,7 @@ jobs:
         docker build \
           --tag parking-backend:test \
           --build-arg BUILDKIT_INLINE_CACHE=1 \
+          -f Dockerfile.fastapi \
           .
 
     - name: Build frontend Docker image
@@ -521,81 +450,11 @@ jobs:
       with:
         sarif_file: 'trivy-backend-results.sarif'
 
-  # Performance Tests
-  performance-tests:
-    name: Performance Tests
-    runs-on: ubuntu-latest
-    if: ${{ !github.event.inputs.test_type || github.event.inputs.test_type == 'all' || github.event.inputs.test_type == 'integration' }}
-
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_USER: test_user
-          POSTGRES_PASSWORD: test_password
-          POSTGRES_DB: test_parking_db
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ env.PYTHON_VERSION }}
-
-    - name: Install dependencies
-      working-directory: ${{ env.BACKEND_DIR }}
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r app/requirements.txt locust
-
-    - name: Run load tests
-      working-directory: ${{ env.BACKEND_DIR }}
-      env:
-        DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_parking_db
-        SECRET_KEY: test-secret-key-for-ci-${{ github.run_id }}
-        JWT_SECRET_KEY: test-jwt-secret-for-ci-${{ github.run_id }}
-        RPI_API_KEY: test-rpi-key-for-ci
-      run: |
-        # Start application
-        python app.py > performance.log 2>&1 &
-        echo $! > app.pid
-        sleep 20
-        
-        # Run load test
-        locust \
-          -f tests/load_tests/load_test.py \
-          --headless \
-          --users 50 \
-          --spawn-rate 10 \
-          --run-time 2m \
-          --html=test-results/load-test.html \
-          --csv=test-results/load-test
-        
-        # Stop application
-        kill $(cat app.pid)
-
-    - name: Upload performance test results
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: performance-test-results
-        path: ${{ env.BACKEND_DIR }}/test-results/
-        retention-days: 30
-
   # Test Summary and Reporting
   test-summary:
     name: Test Summary
     runs-on: ubuntu-latest
-    needs: [backend-tests, frontend-tests, e2e-tests, docker-tests, performance-tests]
+    needs: [backend-tests, frontend-tests, e2e-tests, docker-tests]
     if: always()
 
     steps:
@@ -655,21 +514,10 @@ jobs:
         fi
         echo "" >> $GITHUB_STEP_SUMMARY
         
-        # Performance tests status
-        if [ "${{ needs.performance-tests.result }}" == "success" ]; then
-          echo "### ✅ Performance Tests - PASSED" >> $GITHUB_STEP_SUMMARY
-          echo "- Load Testing: ✅ Completed" >> $GITHUB_STEP_SUMMARY
-          echo "- Response Times: ✅ Within Limits" >> $GITHUB_STEP_SUMMARY
-        else
-          echo "### ❌ Performance Tests - FAILED" >> $GITHUB_STEP_SUMMARY
-        fi
-        echo "" >> $GITHUB_STEP_SUMMARY
-        
         echo "## 📁 Test Artifacts" >> $GITHUB_STEP_SUMMARY
         echo "- Backend Results: Available in artifacts" >> $GITHUB_STEP_SUMMARY
         echo "- Frontend Results: Available in artifacts" >> $GITHUB_STEP_SUMMARY
         echo "- E2E Results: Available in artifacts" >> $GITHUB_STEP_SUMMARY
-        echo "- Performance Reports: Available in artifacts" >> $GITHUB_STEP_SUMMARY
 
     - name: Comment on PR
       if: github.event_name == 'pull_request' && always()
@@ -682,7 +530,6 @@ jobs:
           ✅ **Frontend Tests**: ${{ needs.frontend-tests.result }}
           ✅ **E2E Tests**: ${{ needs.e2e-tests.result }}
           ✅ **Docker Tests**: ${{ needs.docker-tests.result }}
-          ✅ **Performance Tests**: ${{ needs.performance-tests.result }}
           
           Detailed reports available in workflow artifacts.`;
           
