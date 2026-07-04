@@ -1,213 +1,207 @@
-name: Android E2E Tests with Backend
+name: Android CI
 
 on:
-  push:
-    branches:
-      - main
-      - master
-  pull_request:
-    branches:
-      - main
-      - master
-  workflow_dispatch:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+env:
+  JAVA_VERSION: '17'
+  PYTHON_VERSION: '3.12'
+  API_LEVEL: '28'
+  APP_PACKAGE: 'com.example.visionpark'
 
 jobs:
-  e2e-tests:
-    runs-on: ubuntu-latest
-    env:
-      ANDROID_SDK_ROOT: ${{ github.workspace }}/.android/sdk
-      API_LEVEL: 28
-      EMULATOR_NAME: test-emulator
-      PYTHON_VERSION: '3.12'
-      JAVA_VERSION: 17
-      APPIUM_LOG_FILE: appium.log
-      TEST_REPORT_FILE: tests/report.html
-      APP_PACKAGE: com.example.visionpark
+  # ────────────────────────────────────────────────────────────
+  # JOB 1: Unit tests + APK build (fast, no emulator needed)
+  # ────────────────────────────────────────────────────────────
+  build-and-unit-tests:
+    name: Build & Unit Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    steps:
+      - uses: actions/checkout@v4
 
-      - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: ${{ env.JAVA_VERSION }}
-          cache: 'gradle'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: gradle
 
-      - name: Set up Python ${{ env.PYTHON_VERSION }}
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-          cache: 'pip'
+      - name: Inject Maps API key
+        run: |
+          echo "MAPS_API_KEY=${{ secrets.MAPS_API_KEY }}" \
+            > Vision-Parking/local.properties
 
-      - name: Install Python dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r Vision-Parking/tests/requirements.txt
+      - name: Make gradlew executable
+        run: chmod +x Vision-Parking/gradlew
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-        with:
-          packages: platform-tools system-images;android-${{ env.API_LEVEL }};google_apis;x86_64 build-tools;28.0.3
-          android-sdk-path: ${{ env.ANDROID_SDK_ROOT }}
+      - name: Run unit tests
+        working-directory: Vision-Parking
+        run: ./gradlew test --no-daemon
 
-      - name: Cache Android AVD
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.android/avd
-            ~/.android/adb*
-            ~/.android/avd/*.ini
-          key: avd-${{ env.API_LEVEL }}-google_apis-x86_64
+      - name: Build debug APK
+        working-directory: Vision-Parking
+        run: ./gradlew assembleDebug --no-daemon
 
-      - name: Free port 80
-        run: |
-          sudo systemctl stop nginx || true
-          sudo systemctl stop apache2 || true
-          sudo killall apache2 || true
-          sudo killall nginx || true
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug-apk
+          path: Vision-Parking/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 1
 
-      - name: Clean up Docker Compose
-        run: docker compose -f docker-compose.fastapi.yml down -v
-        working-directory: ./Backend
-        if: always()
+      - name: Upload unit test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: unit-test-results
+          path: Vision-Parking/app/build/reports/tests/
+          retention-days: 7
 
+  # ────────────────────────────────────────────────────────────
+  # JOB 2: E2E tests on emulator (separate job, longer timeout)
+  # ────────────────────────────────────────────────────────────
+  e2e-tests:
+    name: E2E Tests on Emulator
+    runs-on: ubuntu-latest
+    needs: build-and-unit-tests
+    timeout-minutes: 60
 
-      - name: Start backend with Docker Compose
-        run: docker compose -f docker-compose.fastapi.yml up -d db app nginx
-        working-directory: ./Backend
+    steps:
+      - uses: actions/checkout@v4
 
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
 
-      - name: Wait for database to be ready
-        run: |
-          for i in $(seq 1 30); do
-            if docker compose -f docker-compose.fastapi.yml exec -T db pg_isready -U parking_user -d parking_db; then break; fi
-            sleep 5
-          done
-        working-directory: ./Backend
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
 
-      - name: Setup database with seeding file
-        run: |
-          docker cp COMPLETE_DATABASE_SETUP_FIXED.sql $(docker compose -f docker-compose.fastapi.yml ps -q db):/setup.sql
-          docker compose -f docker-compose.fastapi.yml exec -T db psql -U parking_user -d parking_db -f /setup.sql
-        working-directory: ./Backend
+      - name: Install Python dependencies
+        run: |
+          pip install -r Vision-Parking/tests/requirements.txt
 
-      - name: Wait for backend API to be ready
-        run: |
-          for i in $(seq 1 30); do
-            if curl -s http://localhost:5001/health; then exit 0; fi
-            sleep 5
-          done
-          exit 1
-        working-directory: ./Backend
+      # ── FIX 1: enable hardware acceleration for the emulator ──
+      - name: Enable KVM group perms
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
 
-      - name: Verify database setup
-        run: |
-          echo "Verifying database tables and data..."
-          docker compose -f docker-compose.fastapi.yml exec -T db psql -U parking_user -d parking_db -c "
-            SELECT 
-              (SELECT COUNT(*) FROM users) as users,
-              (SELECT COUNT(*) FROM parkinglots_details) as parking_lots,
-              (SELECT COUNT(*) FROM user_vehicles) as vehicles,
-              (SELECT COUNT(*) FROM parking_sessions) as sessions;
-          "
-        working-directory: ./Backend
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: >-
+            platform-tools
+            system-images;android-${{ env.API_LEVEL }};google_apis;x86_64
+            build-tools;28.0.3
 
-      - name: Inject Google Maps API Key
-        run: echo "MAPS_API_KEY=${{ secrets.MAPS_API_KEY }}" > Vision-Parking/local.properties
+      - name: Cache Android AVD
+        id: avd-cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-${{ env.API_LEVEL }}-google_apis-x86_64-v1
 
-      - name: Make gradlew executable
-        run: chmod +x Vision-Parking/gradlew
+      - name: Create AVD if not cached
+        if: steps.avd-cache.outputs.cache-hit != 'true'
+        run: |
+          echo "no" | avdmanager create avd \
+            -n test-emulator \
+            -k "system-images;android-${{ env.API_LEVEL }};google_apis;x86_64" \
+            --force
 
-      - name: Build Android APK
-        run: ./gradlew assembleDebug
-        working-directory: ./Vision-Parking
+      - name: Download APK from previous job
+        uses: actions/download-artifact@v4
+        with:
+          name: app-debug-apk
+          path: Vision-Parking/app/build/outputs/apk/debug/
 
-      - name: Make run_e2e.sh executable
-        run: chmod +x Vision-Parking/run_e2e.sh
+      # ── FIX 2: install Appium + the UiAutomator2 driver ──
+      - name: Install Appium and UiAutomator2 driver
+        run: |
+          npm install -g appium
+          appium driver install uiautomator2
+          appium driver list --installed
 
-      - name: Run E2E tests on emulator
-        uses: ReactiveCircus/android-emulator-runner@v2
-        env:
-          APP_PACKAGE: ${{ env.APP_PACKAGE }}
-        with:
-          api-level: ${{ env.API_LEVEL }}
-          target: google_apis
-          arch: x86_64
-          profile: Nexus 5
-          ram-size: 3072M
-          heap-size: 768M
-          emulator-options: -no-window -no-audio -no-boot-anim -no-snapshot -no-snapshot-save -no-sim -memory 3072 -wipe-data -partition-size 8192 -gpu swiftshader_indirect -camera-back none -camera-front none
+      - name: Start backend
+        working-directory: Backend
+        run: |
+          docker compose down -v 2>/dev/null || true
+          docker compose up -d
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:5000/health > /dev/null 2>&1; then
+              echo "Backend ready"; break
+            fi
+            sleep 5
+          done
 
+      - name: Seed database
+        working-directory: Backend
+        run: |
+          for i in $(seq 1 20); do
+            if docker compose exec -T db pg_isready -U parking_user 2>/dev/null; then
+              break
+            fi
+            sleep 3
+          done
+          docker cp COMPLETE_DATABASE_SETUP_FIXED.sql \
+            "$(docker compose ps -q db)":/setup.sql
+          docker compose exec -T db \
+            psql -U parking_user -d parking_db -f /setup.sql
 
+      - name: Make scripts executable
+        run: |
+          chmod +x Vision-Parking/run_e2e.sh
+          chmod +x Vision-Parking/ci_emulator_setup.sh
 
-          disable-animations: true
-          script: |
-            echo "Waiting for device..."
-            adb wait-for-device
-            
-            echo "Waiting for system to be ready..."
-            adb shell 'while [[ -z $(getprop sys.boot_completed) ]]; do sleep 1; done'
-            
-            echo "Waiting for package manager..."
-            adb shell 'while ! pm list packages > /dev/null 2>&1; do sleep 1; done'
-            
-            echo "Waiting for settings service (prevents Appium hidden_api_policy error)..."
-            adb shell 'for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30; do cmd settings get global hidden_api_policy > /dev/null 2>&1 && echo "Settings ready" && break; sleep 2; done'
-            
-            echo "Extra stabilization wait for framework services..."
-            sleep 15
-            
-            echo "Device ready, granting permissions..."
-            adb shell pm grant $APP_PACKAGE android.permission.CAMERA || true
-            adb shell pm grant $APP_PACKAGE android.permission.ACCESS_FINE_LOCATION || true
-            adb shell pm grant $APP_PACKAGE android.permission.ACCESS_COARSE_LOCATION || true
-            adb shell pm grant $APP_PACKAGE android.permission.WRITE_EXTERNAL_STORAGE || true
-            adb shell pm grant $APP_PACKAGE android.permission.READ_EXTERNAL_STORAGE || true
-            
-            echo "Installing APK..."
-            adb install -r Vision-Parking/app/build/outputs/apk/debug/app-debug.apk
-            
-            echo "Clearing app data to ensure clean state..."
-            adb shell pm clear $APP_PACKAGE || echo "Could not clear app data"
-            
-            echo "Verifying app installation..."
-            adb shell pm list packages | grep $APP_PACKAGE
-            
-            echo "Starting app to verify it launches..."
-            adb shell am start -n $APP_PACKAGE/com.example.visionpark.activities.SplashScreenActivity
-            sleep 5
-            
-            echo "Checking if app is running..."
-            adb shell "ps | grep $APP_PACKAGE" || adb shell "ps -A | grep $APP_PACKAGE" || echo "App process not found"
-            
-            echo "Getting current activity..."
-            adb shell dumpsys activity activities | grep "mResumedActivity" || echo "Could not get current activity"
-            
-            echo "Stopping app before tests..."
-            adb shell am force-stop $APP_PACKAGE
-            
-            echo "Running E2E tests..."
-            cd Vision-Parking && timeout 100m ./run_e2e.sh
+      - name: Run E2E tests on emulator
+        uses: ReactiveCircus/android-emulator-runner@v2
+        env:
+          APP_PACKAGE: ${{ env.APP_PACKAGE }}
+        with:
+          api-level: ${{ env.API_LEVEL }}
+          target: google_apis
+          arch: x86_64
+          profile: Nexus 5
+          ram-size: 2048M
+          heap-size: 512M
+          force-avd-creation: false
+          emulator-options: >-
+            -no-window -no-audio -no-boot-anim
+            -no-snapshot -wipe-data
+            -gpu swiftshader_indirect
+            -camera-back none -camera-front none
+          disable-animations: false
+          script: bash Vision-Parking/ci_emulator_setup.sh
 
+      - name: Upload E2E report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: e2e-report
+          path: Vision-Parking/tests/report.html
+          retention-days: 7
 
+      - name: Upload Appium log
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: appium-log
+          path: /tmp/appium.log
+          retention-days: 7
 
-      - name: Upload test report
-        uses: actions/upload-artifact@v4
-        with:
-          name: e2e-test-report
-          path: Vision-Parking/${{ env.TEST_REPORT_FILE }}
-        if: always()
-
-      - name: Upload Appium log
-        uses: actions/upload-artifact@v4
-        with:
-          name: appium-log
-          path: ${{ env.APPIUM_LOG_FILE }}
-        if: always()
-
-      - name: Clean up Docker Compose
-        run: docker compose -f docker-compose.fastapi.yml down -v
-        working-directory: ./Backend
-        if: always()
+      - name: Stop backend
+        if: always()
+        working-directory: Backend
+        run: docker compose down -v
