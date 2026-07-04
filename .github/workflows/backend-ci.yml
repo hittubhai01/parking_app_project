@@ -129,8 +129,8 @@ jobs:
             --self-contained-html \
             --cov=fastapi_app \
             --cov-report=html:test-results/coverage \
-            --cov-report=xml:test-results/coverage.xml \
-            -n auto
+            --cov-report=xml:test-results/coverage.xml
+
 
       - name: Run integration tests
         id: integration-tests
