@@ -22,8 +22,6 @@ export default defineConfig({
           // Vendor chunks
           'react-vendor': ['react', 'react-dom', 'react-router-dom'],
           'chart-vendor': ['recharts'],
-          'ui-vendor': ['@headlessui/react'],
-          
           // Feature-based chunks
           'auth': [
             './src/context/AuthContext.jsx',
@@ -73,13 +71,7 @@ export default defineConfig({
     
     // Optimize build performance
     target: 'esnext',
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: true, // Remove console.log in production
-        drop_debugger: true
-      }
-    },
+    minify: 'esbuild',
     
     // Set chunk size warning limit
     chunkSizeWarningLimit: 1000

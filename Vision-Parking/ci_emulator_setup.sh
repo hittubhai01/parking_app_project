@@ -1,17 +1,19 @@
 #!/usr/bin/env bash
 # ci_emulator_setup.sh
-# Sets up the emulator environment, installs the APK, starts Appium,
+# Runs from repo root (via ReactiveCircus/android-emulator-runner).
+# Sets up the emulator, installs the APK, starts Appium,
 # runs the Pytest E2E suite, then tears everything down.
 set -euo pipefail
 
+# Paths relative to repo root
 APK_PATH="Vision-Parking/app/build/outputs/apk/debug/app-debug.apk"
 APP_PACKAGE="com.example.visionpark"
 APPIUM_LOG="/tmp/appium.log"
-REPORT_DIR="Vision-Parking/tests"
+EXIT_CODE=0
 
 echo "=== CI Emulator Setup ==="
 
-# ── 1. Wait for boot ──────────────────────────────────────────────────────────
+# ── 1. Wait for emulator boot ────────────────────────────────────────────────
 echo "Waiting for emulator to boot..."
 adb wait-for-device
 for i in $(seq 1 60); do
@@ -23,7 +25,7 @@ for i in $(seq 1 60); do
   sleep 5
 done
 
-# ── 2. Unlock screen ──────────────────────────────────────────────────────────
+# ── 2. Unlock screen ─────────────────────────────────────────────────────────
 adb shell input keyevent 82 || true
 adb shell wm dismiss-keyguard 2>/dev/null || true
 adb shell cmd statusbar collapse 2>/dev/null || true
@@ -33,10 +35,12 @@ echo "Installing APK..."
 adb install -r -t "$APK_PATH"
 echo "APK installed: $APP_PACKAGE"
 
-# ── 4. Start Appium ───────────────────────────────────────────────────────────
+# ── 4. Install and start Appium ──────────────────────────────────────────────
+echo "Installing Appium..."
+npm install -g appium@latest --silent
+echo "Installing uiautomator2 driver..."
+appium driver install uiautomator2
 echo "Starting Appium server..."
-npm install -g appium@2 --silent
-appium driver install uiautomator2 --source npm
 appium --log "$APPIUM_LOG" --port 4723 &
 APPIUM_PID=$!
 echo "Appium PID: $APPIUM_PID"
@@ -46,20 +50,21 @@ for i in $(seq 1 30); do
     echo "Appium ready after ${i}s"
     break
   fi
+  echo "Waiting for Appium... attempt $i/30"
   sleep 3
 done
 
-# ── 5. Run E2E tests ──────────────────────────────────────────────────────────
+# ── 5. Run E2E tests ─────────────────────────────────────────────────────────
 echo "Running E2E test suite..."
-cd Vision-Parking
-python -m pytest tests/ \
+python -m pytest Vision-Parking/tests/ \
   -v --tb=short \
-  --html=tests/report.html \
+  --html=Vision-Parking/tests/report.html \
   --self-contained-html \
   || EXIT_CODE=$?
 
-# ── 6. Tear down ──────────────────────────────────────────────────────────────
+# ── 6. Tear down ─────────────────────────────────────────────────────────────
 echo "Stopping Appium..."
 kill "$APPIUM_PID" 2>/dev/null || true
 
-exit "${EXIT_CODE:-0}"
+echo "E2E tests finished with exit code: $EXIT_CODE"
+exit "$EXIT_CODE"
