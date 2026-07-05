@@ -3,10 +3,10 @@ name: Android CI
 on:
   push:
     paths:
-      - "vision-parking/**"
+      - "Vision-Parking/**"
   pull_request:
     paths:
-      - "vision-parking/**"
+      - "Vision-Parking/**"
 
 jobs:
   build:
@@ -25,10 +25,16 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Build with Gradle
-        working-directory: vision-parking
-        run: ./gradlew build
+      - name: Grant execute permission to gradlew
+        working-directory: Vision-Parking
+        run: chmod +x gradlew
 
-      - name: Run Instrumented Tests
-        working-directory: vision-parking
-        run: ./gradlew connectedAndroidTest
+      - name: Build with Gradle
+        working-directory: Vision-Parking
+        run: ./gradlew build --no-daemon
+
+      - name: Run Android unit tests
+        working-directory: Vision-Parking
+        run: ./gradlew test --no-daemon
+        # Note: connectedAndroidTest requires a running emulator and is NOT run here.
+        # Use a separate workflow with emulator-wtf or Firebase Test Lab for instrumented tests.

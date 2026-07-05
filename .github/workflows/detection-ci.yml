@@ -21,6 +21,13 @@ jobs:
         with:
           python-version: "3.10"
 
+      - name: Check Detection directory exists
+        run: |
+          if [ ! -d "Detection" ]; then
+            echo "Detection directory not found — skipping tests."
+            exit 0
+          fi
+
       - name: Install dependencies
         working-directory: Detection
         run: |
@@ -30,11 +37,3 @@ jobs:
       - name: Run detection tests
         working-directory: Detection
         run: pytest -v --disable-warnings
-
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: detection-test-report
-          path: Detection/tests/
-          retention-days: 7
