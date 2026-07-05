@@ -1,0 +1,40 @@
+name: Detection CI
+
+on:
+  push:
+    paths:
+      - "Detection/**"
+  pull_request:
+    paths:
+      - "Detection/**"
+
+jobs:
+  test-detection:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        working-directory: Detection
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run detection tests
+        working-directory: Detection
+        run: pytest -v --disable-warnings
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: detection-test-report
+          path: Detection/tests/
+          retention-days: 7
